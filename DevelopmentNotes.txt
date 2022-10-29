@@ -1,0 +1,920 @@
+
+****************************************************************************
+Development logs:
+****************************************************************************
+
+2007 June:
+    A couple of things have changed.
+    1.  pylab is still the plotting support, because it is straighter
+        for fast writing.
+    2.  the PeakFind algorithm is now based on the bwlabel flooding
+        method, which makes it more reliable
+    3.  added shift for shifting images to new coordinates
+    4.  created bwfloodlist, which is flooding confluent ares, and
+        provide this to bwlabel
+    5.  poly_fill is filling up images to form confluent ares. One can
+        use this to obtain filled areas within contours, even if the
+        contour has gaps. It should mimic an IDL like behavior.
+
+    6.  the ConvFilter is now padding to the next power of 2, to make
+        sure the FFT has the proper speed. It can be turned off if
+        wanted.
+
+
+2007. June 25:
+    The convolution filter is faster using the real based fft, thus rfft2.
+    It is similar to the usual one, but for the case of real numbers, it
+    returns half of the data, cutting down the symmetric part.
+    The inverse works fine as well, called irfft2.
+    Tested on padded images, and found no difference, except a factor of
+    2 speed enhancement.
+
+2007. July 24:
+    Changed the return of the convolution filter to the real part of the
+    complex returned value from the fft. This is actually the proper math
+    8).
+
+2007. Aug. 22:
+    fft is called now: fft(image, shape=(x1,y1)) which does the padding.
+    What happens is that the resulted image is shifted and split in a
+    strange way, propotional to the size of the kernel.
+    The whole thing looks a bit weird, and has to be checked out more
+    properly.
+
+    The Numerical Recipies in C++ suggests, that the kernel function is
+    redistributed into the corners of the zero padded image, while the
+    original data set is left as is.
+    No conjugation is done in the operation, though they use a real FFT
+    and some tricky multiplication in it, wich averages the neighbours.
+
+    Anyway, now I am experimenting with:
+    image is padded up
+    image2 is padded and shifted to the corners
+    then fft and multiplication, and then inverse.
+    The resulted function is padded with zeros at the end.
+    --> no good.
+
+    Some further explanation about correlation:
+        When the complex conjugate is used in the second FFt term,
+        then the result is the correlation of the two functions, and
+        it has a different symmetry:
+            Corr(f,g) = - Corr(g,f)
+
+
+    This whole shifting does not really solve anything. The FFT of the
+    split function looks the same with a lot of modulation on it. It looks
+    better using the original one.
+    But then I still do not really understand what is going on.
+
+    The Num Rec. states, that the padding has to take the size of the
+    nonzero data, and double it with zeros.
+    Let that be.
+    Found something even funnier: When identifying something, the target
+    image has to be mirrored using [::-1,::-1].
+    This can be found at: http://www.dspguide.com/ch24/6.htm
+
+
+2007.09.23:
+    Many of my works need an approximated profile from images around
+    a given point, with given length and direction.
+    A function is written to extract a profile using a bilinear
+    interpolation.
+    It is a prototype, but already works nice.
+
+2007.10.08:
+    At last some more: completed some parts of the bwanalyze() function.
+    This routine is meant to return some useful properties of binary image
+    patches in order to save some code writing.
+    Such patches are: the window of the area, the geometric center and the
+    orientation based on the second momentum tensor (or inertia tensor) of
+    the patch. This algorithm uses images returned by the bwlabel().
+
+2008.01.09:
+    Some more things.
+    In order to calculate the fractal dimension of structures, we need an
+    algorithm to find the peripheral points.
+    It is based on the bwlabel system: just go through the image, and find
+    all those pixels, which have a background neighbour. All the rest
+    should be zeroed.
+
+2008.02.14:
+    Rewritten the particle tracker part using numpy arrays now. Instead
+    of converting everything to lists -which may be more elegant- just
+    use an index to reload the arrays with dumping the position found
+    already.
+    This may be acutally much slower than the original list based one
+    using pop().
+    Just a first test has been run, and that was fine.
+
+2008.02.28:
+    Added a gap to the bwlabel and bwfloodlist. This slows things down a
+    bit, given, that there is no fast outer operator in Python. The gap
+    results a larger search index in bwfloodlist, which causes merging
+    patches which a separated with gap number of pixels only.
+    This is useful for actin images, or cases, where we have patches
+    falling apart due to noise.
+
+2008.08.06:
+    In the Digital Image Processing from Jahle, one finds the eccentricity
+    definition in Chapter 19. (19.6) as:
+    ecc = ((xx - yy)**2 + 4*xy**2)/(xx+yy)**2
+    This should be 0 for a circle, 1.0 for a line.
+
+    from http://ecco2.jpl.nasa.gov/data1/matlab/images/images/regionprops.m
+    common = sqrt( xx - yy)**2 + 4*xy*xy)
+    MajorAxis = 2 * sqrt( 2*( xx + yy + common))
+    MinorAxid = 2 * sqrt( 2*( xx + yy - common))
+    Ref: Haralick and Shapiro, Computer and Robot Vision vol I,
+    Addison-Wesley 1992, Appendix A.
+    pl.clf()
+    pl.imshow(Phi_avg, interpolation='nearest')
+    pl.draw()
+    pl.axis('off')
+    pl.savefig('Phi_avg.png',dpi=150)
+
+2008.12.16:
+    Had a look into ErrodeImage again. I cleaned the code slightly, and
+    added some more comments. The idea is, that it converts an image to
+    patches using img >= Start or img <= Start depending on the FindMax
+    switch. Then based on this, it tries finding the boundaries in the
+    empty area.
+    There are variations:
+        if NewCenter is active, then a point may be the neighbor of an
+        existing patch -> attach to it, a new minimum or maximum of
+        its own neighbors then create a new patch, or none of these,
+        then attach to the patch, which has the nearest center.
+        if NewCenter is False, then simply attach to the neighboring
+        or the nearest patch.
+    The points which have neighbors of more then one existing patches
+    become walls -> added to a list, and disabled from further access.
+
+    Return the list of wall points.
+
+    This approach to the NewCenter tends to fragment the image so much,
+    that it does not worth really using it. Perhaps if a highly smoothed
+    original is used...
+
+2009.02.13:
+    The new numpy package has brought some changes. One of them is in the
+    histogram function, which made me change hist() as well. A new,
+    midpoints dir key is added, to hold the middle values of the pockets.
+    The pockets now includes the right side of the bins, thus we have
+    there N+1 points.
+
+2009.05.28:
+    An old mistake, time to correct. In graythresh, N was taken from the
+    absolute maximum value of the image. However, if the image is a float, 
+    and the maximum is low (like 1), the whole thing is broken.
+
+    From now the graythresh checks if an image is bool or integer, and if
+    bool, and if integer and the maximum is less than 2,  it returns an None
+    with an error message.
+
+    In verbose mode, it also raises a warning if the number of histogram
+    pockets is < 5.
+
+
+    Also I took out the pl.ion() command for the interactive plotting, all,
+    who wants this should call it up separately.
+
+2009.11.19:
+    I found an image blowing the graythresh away. The point is: at the edges
+    of the histogram, the w and mu are close to 0 or 1.0, but they should give
+    a 0/0 -> 0. However, when they hit an exact 0.0, the arithmethic of the
+    machine is blown.
+
+    So, now for cases where w or w1 are exactly 0.0, we set 1E-8. This should
+    save the day.
+
+2010.02.26:
+    Start again: speedup and adding new functions as well. Python is great,
+    and now, the ctypes helps to integrate with C nicely, without
+    cross-coding. Clean C codes and numpy python. I like the transparency of
+    the result.
+
+    For small kernels using a direct for loop in C speeds up about 2x
+    comparing to Python, and it is even faster than the ConvFilter. This is
+    written into the Flib.SimpleFilter(). The bwfloodlist also can be sped up
+    quite a bit.
+
+    Unfortunately the recursice -easy and nice- solution blows if a large
+    enough, uniform image calls it (of course, the stack is limited).
+    So, I have to implement a different cyclic solution.
+    O.k., the routing makes a temporary storage for the indices, then does the
+    same as the python code, just not so elegantly.
+    One problem is the large memory need if I have a huge confluent area, such
+    as 500x500 pixels or so. Many hits are multiples. The only solution I can
+    do is waisting time: control the memory: throw out empty points from the
+    list, allowing to fill up even with the whole image.
+    This saves the program from segfaulting.
+
+2010. 03. 03:
+    Well, the bwfloodlist and bwlabel can be significantly sped up in C.
+    Testing the min, max, mean and var calculation however did not mean a huge
+    change. One can still win about 40% in the time just because the whole
+    array is passed only twice instead 1x for each, and twice for the mean.
+
+
+    Now integrating them to ImageP without breaking anything. The idea:
+    if one can get the C routines thouse should work. If not, fall back to
+    Python equivalents.
+
+    Done. The ImageP tries to import the Csource. If it fails, opens the
+    Pysource file.
+
+    Packaging: changed the structure so we can have some cleaner code. This
+    requires that the __init__ imports the subpackage parts for the ImageP, so
+    earlier scripts can run as well.
+
+2010.03.04:
+    A small mistake: SimpleFilter has to be added to the __all__ list.
+    Actually, __all__ is added to Csource and Pysource as well. And the
+    SimpleFilter.c is a little simpler now. One if() checks for the
+    boundaries, and if the index is within then does the calculation, if out,
+    just does nothing.
+
+    Next filter: a RankFilter(); this can do filtering using min, max or mean
+    value of the 'kernel' area. The area is given by N,M indices and mean all
+    pixels taken in the: i+/-N and j+/-M slice. Naturally a new image is
+    written, so there is no avalanche effect in the process.
+
+    The result is maybe a bit slow, about 0.2 seconds for the test image; 
+    the median is implemented by sorting the pixels and picking the middle
+    one from the list. The original qsort() C function is replaced by a 
+    simple insertion sorting, which is theoretically worse for data sets 
+    above 10-20 points, but still much faster than the original
+    general qsort(). (Best case is N, normal or worst case is N^2 steps.)
+
+2010.03.05:
+    Added the BinomKernel, a binomial mask, and also separated all these
+    kernels to a Kernels.py file. It is easier to maintain them here.
+
+    Next step: several filters are actually the outer product of the vertical
+    and horizontal vector of the same shape. These filters can be applied
+    line-by-line then column-wise decreasing the required steps of operation.
+    This is true for both pixel wise calculation, like for the SimpleFilter or
+    with a convolution, as for the ConvFilter. (Example: boxcar, Gaussian or
+    binomial filters.)
+    To implement it a nice way would be to add a 1dim=False/True switch to the
+    masks, and provide the proper 1d filter method. Adding the same switch to
+    the existing filter routines may blow the code a bit larger and slower.
+
+    O.k., these changes are done. The ConvFilter1D() is now using the 1D
+    version of the filter kernels and runs along y and then x. The result is a
+    about 2.87 x speed improvement, and quite the same result as before. (The
+    difference sum for the whole image with the interlacing edges is about 
+    10^-7 - 1Mpixel image).
+
+    The internal filters now also modified, so both the MeanFilter and BPass
+    use the ConvFilter1D().
+
+    Just for comparison: on my PC, using a 768x1024 image and a
+    GaussKernel(5,2), the timing is:
+    SimpleFilter:   1.4 sec.
+    ConvFilter  :   1.5 sec.
+    ConvFilter1D:   0.6 sec.
+
+    SimpleFilter1D is also added for the sake of completness.
+
+2010. 03. 09.:
+    PerimeterImage: it is pretty easy to run this filter in C, simply checking
+    for all available neighbours. If not, then mark the point. The edge lines
+    are not taken into account in the result.
+
+    One word of caution: I noticed, that the arrays of operations such as
+    transpose are not contiguous except if they are copied to a new memory
+    space. Thus, a kernel should not be a.transpose(), but a b should be
+    defined as: b = a.tranpose().copy(), and used then for the C functions.
+
+    Bug: the SimpleFilter1D was not properly set up in teh Csource.py. Now it
+    is corrected and running fine.
+    
+
+2010.03.15:
+    Another bug fix: the SipleFilter and SimpleFilter1D had typos in the
+    reindexing, resulting false images. The edge pixels are not rejected
+    anymore, though the user must know that they are effected by the empty
+    edge.
+
+    Change in the GaussKernel:
+    Using the FWHM may be a bit disturbing, so now I allow the use of a width
+    parameter (c on the Wikipedia page).
+
+2010.03.17:
+    A bit of work on PeakFind and PeakPos. PeakFind should get closer to the
+    original algorithm proposed by the Grier group. The MinSize parameter is
+    nice, but not needed -at least not for the particle tracking. However,
+    a gap parameter may be useful, since particles may prodice a double peak
+    or a ring when out of focus. This may be a little complensated if the
+    algorithm treats areas within a spot as one. Spot can be defined by its
+    size.
+    One may still argue though that such situation would anyway ruin the
+    precision of the track. Fluctuation along a ring may cause large jumps in
+    the track data, making the subpixel resolution gone.
+
+    Added the mark parameter to the output of PeakPos, this holds 1 for
+    positions too close to the edge of the image.
+
+    Another question: whether implementing in C would be faster, nicer etc.
+
+2010.03.18:
+    Try an implementation of PeakFind in C. This uses a +/-w window around
+    each pixel to find the local maximum. If it is found, it jumps to the edge
+    or to the new maximum and investigates.
+    The code runs fine, now the python version has to be changed to work the
+    same way.
+
+    One note about the local maximum algorithm: This PeakFind will search
+    pixels above a threshold. Then checks if that pixel is the maximal one
+    within its +/- width size surroundings. If not, it goes: 1. to the new
+    maximum if it is on the same line, or 2. to the edge of the window. It
+    also deletes the midpoint in such cases.
+
+    Now this algorithm will work relatively fast and nice, but for an image
+    with a constant gradient it shall return the edge of the image, even
+    though this gradient is larger than the window. In general, it will do no
+    good using this on not well separated structures.
+
+2010.03.19:
+    Now the python PeakFind does exactly what the C version does, in a quite
+    simple and plain way. The C code is only about 25% faster for an image
+    with little number of features. (5 peaks)
+
+    Let us have a look at the ParticleTrack: can it be improved?
+    Drop the maxgap parameter. If there is a gap, for example the particle
+    gets fainter, it should not matter. If it wanders away, anyway it would be
+    lost with gap as well.
+    It is a bit simpler, and though I have not timed it, slightly faster as
+    well.
+
+2010.03.25:
+    Added a particle tracking example. This is not the fastest possible
+    script, but since it does not pull all images to memory, it is relatively
+    easy going. The slowest step is the BPass filtering, which speeds up with
+    a properly applied ROI.
+
+2010.03.31:
+    Modified the read_img to pick up multipage tifs as lists of images. This
+    may be useful for larger tiff files, but be careful: a stack can sometimes
+    be huge! This part of the code has to be still decided yet.
+
+2010.04.16:
+    Test a lookup based indexing of 'i's. Testbed: the perimeter image
+    routine.
+    Before: 100x Perimeter took: 0.568224906921 seconds
+    After:  100x Perimeter took: 0.584604024887 seconds
+    No improvement, so this is not the way to go...
+
+    PeakFinder: double check. 
+    The python code had a problem: 1. the original image was turned to float,
+    which is not necessary. 2. the max i index was wrongly estimated, missing
+    the edge line of the image.
+    The C code also got some clean up, and some clearer comments. It is not
+    changed much, the speed is the same, just feels better 8).
+
+    SimpleErode: 8 neighbour erosion (simplest possible thing)
+    SimpleDilate: the complementer of SimpleErode; it tries keeping the local
+    maxime at the pixels, but that may not work perfectly. It is also a bit
+    slower than the SimpleErode.
+
+        Some time it would be great adding a more flexible erode and dilate
+        algorithm, but this is a good start.
+
+
+2010.04.26:
+    Since ParticleTrack() allows frames to be skipped, it should record the
+    index of the frame a position belongs to. This is now added.
+
+2010.07.08:
+    fixed a typo bug in Pysources.py/PeakFind(). The hitsI was misspelled a
+    couple places and also hitsX was used instead of hitsI in the hits
+    indication (print).
+
+    Added a maxgap parameter to the tracking. If it is set to 0 (default), it
+    does nothing, otherwise it breaks trajectories after empty tries more than
+    maxgap images apart.
+
+2010.08.02:
+    A crude version of setup.py is working now. It took the direct linking out
+    of the hands of distutils.core.setup() and uses the various linkers built
+    into distutils to try compiling the C sources. I have succeeded it runing
+    under Linux and on an Win7 box with VisualStudio 2008. Actually I found it
+    running relatively easily. I hope some time I can get the other parameters
+    as well, but now only these two I have tested.
+
+
+2010.09.07:
+    The ExtractProfile does not handle the vecStart (start position vector)
+    properly for all cases. This is fixed.
+    Also the gap parameter is set to 0, so one can go to the edge of the
+    images.
+
+    Well, the whole can be done a bit simpler (from programing point of view).
+    Rewrote the code to make it plain and simple. I hope it is also stabil
+    8).
+
+2010.09.13:
+    A small bug: read_img converted the uint16 images signed, making things
+    quite problematic. Now it checks for the 16 bit, and if it is so, it first
+    converts to uint16 then to float, eliminating the sign problems.
+    Not nice, but working at the moment.
+
+
+2010.10.15:
+    Adding a MaxSize to bwlabel. If not set (MaxSize=0), then defaults to the
+    whole image. Otherwise it allows patches only: n in [MinSize,MaxSize].
+    Maybe it is slowing things, but I do not think so. However, it results
+    cleaner results when the user knows the interesting size range in advance.
+
+2011.02.16:
+    A little change in PeakPos: the intensity < 1E-8 is not always correct,
+    and definitely it is  a wrong decision to switch to intensity=1.
+    So, now is intensity is nonzero (inensity != 0.0), the parameters are
+    calculated, if intensity is 0 then all parameters would be 0 so the point
+    is skipped as false area.
+    It is another question how can such an area get into the data? This
+    problem needs some more checking...
+
+
+2011.02.16:
+    Another question: how reliable is the position calculated from the first
+    statistical momentum? Basic statistics says that the error of the mean
+    value of a sample of N points is about standard deviation/sqrt(N), thus
+    the resulted mean is within this reach of the real mean of the ensemble.
+    Now, for the particle positioning, if we assume a standard deviation of
+    being +/- 1 pixel (so accurate is the direct positioning), then we get a
+    rough 1/particle diameter. The PeakPos should return an error value as
+    well.
+    All in all: I have to change the PeakPos a bit, so it does not do all the
+    hassle on particles at the edge if not needed, and also for intensity ==
+    0. This means a restructuring: the variables are assigned as lists, so we
+    can spare a double indexing scheme. That would be more common, this is
+    more python like (I think).
+
+    And a new switch: CutEdge. If True, the particles at the edge are dropped,
+    resulting all 'Mark' = 1.
+
+2011.02.17:
+    A small bug: the Mark has to be popped if a 0 intensity patch is found.
+    This is now corrected in PeakPos.
+
+    And some restructuring:
+     the display functions, such as Image and OverPlot go into the Display.py
+     source. Actually, the Image() is rewritten to work in a bit more general
+     way easing plotting with the matplolib.
+    There is also a composite() function for easily combining images into one.
+    This is useful when one is putting 16 bit images into one composite and
+    lazy to rewrite the code several times.
+
+    The convolution funcitons are now in the Convolve.py part, including a new
+    GaussDeblurr() function. This is used in fluorescence microscopy as a
+    contrast enhancer, a cheap substitute for a real deconvolution.
+
+    Added the Manders and Pearson correlation functions, which can be used to
+    test colocalization in fluorescence images.
+
+    Renamed Image to display, because the name was a bit misleading.
+
+2011.03.28:
+    Bugfixes. Richie has reported some minor bugs in the ImageP source, that I
+    can fix easily. Thank You!
+    
+    Bug 1: The Display.py was missing some more import for OverPlot(). The
+    solution add: arange, sin, cos to the from numpy... line.
+
+    Bug 2: the threshold is misspelled in the Pysource.py file in PeakFind().
+
+    Bug 3: Ubuntu not copying the libCsources.so to the proper folder.
+    This I have to test, it has been working fine on my box, and my second
+    Ubuntu test machine.
+
+    Also added some more example scripts, but they are really nothing special.
+
+    Ad Bug 3: Well, there is a not really nice thing I tried and most probably
+    works. This is creating an empty distribution, extracts the install
+    component and the path within.
+
+2011.04.16:
+    Slight changes in setup, to get closer to a working install on Mac OS X.
+    Unfortunately the build generates a libCsources.so, which has to be
+    renamed to libCsources.dynlib. Then the install works.
+
+    Also added some more dumping to the particle tracker example, because it
+    crashes somehow on Mac with no apparent reason (only when it is running in
+    the background for > 6 hours 8) ). So, now it saves some data on the fly.
+
+2011.06.01:
+    Little mistake: composite() is normalizing zero images, throwing an
+    exception in numpy (Warning: invalid value encountered in divide).
+    Now it is checking if the maximum value is not zero first.
+
+2011.06.08:
+    Another twist: G5 + python 2.7.1 - the patched installer does not work
+    well. The system can not find the C library.
+    Time to do the thing a bit better.
+    Tests show that the libCsources.so is as good as any file name, so I can
+    leave the file name. This eliminates the copy/rename...
+    The library search path of the install is in: sys.path
+    So, modified Csource.py such that it searches the path for the C library,
+    and gets it nicely. I hope this is a stable fix.
+
+    This python also have a MANIFEST.in for generating the sdist sources. So
+    it is added.
+
+    The setup.py is also changed slightly, removed the global variable usage
+    (though it is a bit ugly this way), and modified the cleaning code. Also
+    the Mac part uses now the .so library.
+
+2011.06.24:
+    Patching the Pearson correlation functions. If any of the images is plain
+    zero, then the correlation coefficients should be zero. This way we also can
+    avoid divide by zero problems.
+
+2012.01.16:
+    a little change in Csources: it sets the library name to a dll extension
+    if sys.platform has win in it.
+    And change the documentation: the ParticleTrack is working fine for a
+    while, and tested several times. So, release the unstable sign from it.
+
+2012.08:
+    has_key is deprecated in dicts, so one line is changed to use 'size' in
+    res.
+
+2012.09:
+    the timestamp.py example is repaired, now it spits out a text file and a
+    python pickle (binary) file, containing a two column list: filename and
+    timestamp. This is a script to process coriander image file names, which
+    are time stamps with ms precision. For particle tracking, microrheology or
+    velocity measurements, it is a very useful tool.
+
+    More changes: the timestamp generator had some mistakes, which are fixed
+    now. It also has an option to specify a number as first parameter,
+    limiting the time stamp list to that number of data.
+
+2013.08:
+    some slight fixing in the PerimeterImage(): now it takes any image types.
+    Added the same to SimpleErode and SimpleDilate.
+
+    Rewriting bwanalyze to handle grayscale images. The key parameter now has
+    a special meaning if key is set to 0 or -1 (see help).
+    The new features should allow analyze patches and get the center of mass
+    as well as other features weighted properly according to the intensity
+    distribution. E.g. particle tracking or focal adhesion analysis may get
+    some help from here.
+    The resulting function can simplify some analysis, e.g. for tracking
+    non-spherical features, focal adhesions, etc.
+
+    An error in ParticleTrack: in the original state, it did not track the
+    gap for images with no hits. Thus, if a point came up with a frame
+    > maxgap apart, it still registered as a valid hit (e.g. maxgap = 2,
+    but the indices were: 0, 36,37,...).
+    Change the logic to correct this. And KillIndex is not KillIndex for
+    a while, but KeepIndex telling which data are not used and supposed to
+    be kept. This is renamed 8).
+
+    Another ERROR: PIL1.1.7 crashes on TIF images. Now, either you apply the
+    patches described at:
+    http://stackoverflow.com/questions/6080825/python-pil-ycbcr-support
+    or you try pillow from:
+    https://github.com/python-imaging/Pillow
+    or from your favourite linux distro.
+    I have modified the ImageP to try importing from either of them, and my
+    test seem to work fine.
+
+2013.10.:
+    Time to look at the poly_fill algorithm. It has been very sketchy, and I
+    want to improve it to something functional.
+    So, take again a set of points as a binary image, convert and sort them
+    in polar coordinates and interpolate between (linear interpolation) them 
+    to fill up the gaps, then fill up the area radially.
+    Return the original image, the filled up image, and all useful parts
+    of the process (if required).
+
+    Later: a minor bug, which should not affect much. In PeakFind, the current
+    position was always tested against being > than threshold (0...1), instead
+    of seeing if it is > 0. 0 is used to kill the local maxima already found.
+
+2014.01:
+    Having some interesting problems with bwlabel made me peek into the
+    Csource.py and correct some minor errors.
+
+2014.02:
+    Adding gray scale dilation and erosion operators. These are slow in
+    python, but highly useful to estimate inhomogeneous backgrounds of
+    fluorescence images. Defining them the same way as in the IEEE Computer
+    (1983) Jan 22, page 30, they work quite nice. The corresponding BallKernel
+    function is also added to the kernels.
+
+    Now, the trick of ImageJ to get around the speed is not using C, but to
+    downscale the image first, then upscale the result. Since we are looking
+    for a slowly changing background, this is a possibility.
+    To solve this, I looked into quick-and-dirty scaling possibilities, and
+    found that numpy allows a very simple way of averaging a point to the next
+    N pixels by simply reshaping the array and using the mean(axis=1)
+    function.
+
+    This gets now into the main ImageP system, so people can utililze it.
+    Combined with the GrayErode and GrayDilate, one can have a good rolling
+    ball background calculator.
+
+    I also add the Roll_ball() function, because it is not exactly what the
+    original article did, but an implementation of the java code used in
+    ImageJ. Implementation: reading the code, this is about what it does, and
+    not blindly writing Java in Python as one can see in the github example.
+
+    Corrected the docstring of bwlabel, now stating the role of MaxSize
+    properly.
+
+2015.04:
+    Added a rotated Gauss kernel, which also provides a kind of first and
+    second derivative. This can be easily used to extract edge data from
+    images. The original idea comes from an article:
+    Nature Physics vol:6 page: 468 (2010)
+    I have tested it, it works fine. One can provide the angle, and the kernel
+    rotates to the given angle.
+    .05:
+    Changed the RotatingGaussKernel, so for the 1st derivative return the two
+    gradient images in an arran [fx, fy]. This way the user can decide what to
+    do with them. This does not affect the second derivative.
+
+2015.05:
+    Added an ActiveContour algorithm for fitting an "elastic" contour to data
+    points. This is still in development, but a first stable release.
+
+    Added minimal padding to savefig in display().
+
+2015.06:
+    display(): cleaned a bit up and added a title option
+
+2016.02:
+    well, python 3 is quite mature now, and the key components of ImageP are
+    available for this version. Thus, I start migrating the code, first in a
+    separate folder as ImageP-3. The quick migration is done, now I will need
+    detailed testing if all runs fine.
+    Basic tests of the Csource vs. Pysource is done and passed. The rest will
+    take some time.
+    CircMask is now <=r instead of < r as before.
+
+2016.07:
+    a minimal change: == None is raising a warning, it has to be replaced to 'is'
+    or 'is not' to work properly
+
+2016.10:
+    start implementing some orientation analysis, based on the structure tensor.
+    In order to achieve fast calculations, we can use the commutative and
+    distributive properties of the convolution. For this, first I extended the
+    ConvFilter1D to accept a different kernel in Y-direction than in X.
+    If this kernel is not specified, nothing is altered. However, if this is not
+    None, then this one is used in that direction. This means, we can specify a
+    Mexican-hat funciton in X-direction, and a Gaussian in Y-direction with the
+    same standard deviation, getting a smoothened derivative.
+
+2016.11:
+    Modified the Gaussian kernel, so the 2D kernel returns a transpose for using
+    "Y" direction vs. "X".
+    Working with orientation analysis, I plan adding a proper structure tensor
+    function to the set.
+    From January, I will switch to full python3 only (I keep the source such
+    that it also works on python2).
+
+2017.01:
+    Silly, but removed the unnecessary 2D limit in graythresh. It should work on
+    an arbitrary data array (shape does not matter).
+
+2017.07:
+    In calculating the Pearson correlation, I have a feeling that background
+    corrected fluorescence images with small features are biased to lower means,
+    meaning no real anticorrelation is possible. For such cases, we have the
+    Manders correlation. So, allow the rejection of the <= 0 pixels in
+    calculating the mean.
+        rejectNull = True does that. By default rejectNull = False.
+
+MIGRATION:
+    from this month, switch the main package dir of ImageP to python3, and
+    leave the python2 code in ImageP-2 behind.
+
+2018.08.03:
+    I started working on an extended version of bwlabel() to do identification
+    in 3D. The extension is trivial except one thing: how is the actual 3D
+    stack represented in the linear memory space of numpy?
+    It turns out using the ndarray.strides and itemisze parameters one can
+    figure out how the indices are converted to the linear index.
+    After this, the rest of the algorithm is quite the same as for 2D.
+    Future option: make it N-dimensional?
+
+    Some time ago I have also added a snake spline I implemented based on some
+    Matlab code. This version works reasonably well. I plan allowing the
+    open ended version as well, which will work for not-closed 2D structures.
+
+2018.08.04:
+    Added the Structure Tensor method to the package. This may not be suitable
+    for images with much of point errors, but otherwise it can help finding
+    edges and corners, and extract their orientation as angle (in radians or
+    in degrees).
+
+2018.08.14:
+    It was a long standing aim to get a proper distance transform, which does not
+    run (NxM)**2 or longer and get things done right.
+    I have had a python implementation of the method published in:
+    P. F. Felzenszwalb and D. Huttenlocher
+        Theory of Computing 8:415-428 (2012)
+    The only points I am deviating at:
+    - the C source runs on integers (32 bit at the moment, but that can change)
+    - do not calculate on infinite values, because then mess up the system due to
+        overflowing in C.
+
+    The results works fine. For faster calculation, there is a simple 1D counter
+    which runs from both ends and works fine. (DistanceFilter1DL1)
+    The DistanceFilter1D calculates the lowest points of a parabolic kernel, which
+    makes it working on 2D or 3D stacks if one feeds it the result of the
+    previous axis runs. Thus, run along X with the DistanceFilter1DL1, then
+    run along Y, feeding the previous results to the DistanceFilter1D.
+    If you have a third axis, that should go as well.
+    The DistanceFilter works for 2D well. Any pixels > 0 are used by default, so
+    mask your images if needed.
+
+2018.11.07:
+    Corrected the PeakPos, so it accepts flat segments with printing a message.
+    The user has to take care for such cases, which actually bad statistical quality.
+
+    Added a box counting fractal_dimension() function.
+
+2019.01.09:
+    Fix DistanceFilter(). While the help says it considers img > 0 as objects, it
+    did not set those pixels to inf, resulting in a different behavior.
+    Now, it has an extra switch: inf_th. If it is set (default 0), then pixels >
+    inf_th are set to inf.
+
+2019.01.30:
+    Add an EdgeDetect based on the Gauss kernel and simple convolution. A derivative filter
+    to detect edges in any direction, returning the absolute value of the X and Y derivative
+    image.
+
+    Fixing GaussKernel: I have simplified the code and introduced the proper normalization.
+
+2019.02.21:
+    Added a skeleton erosion code with the necessary special filters: HitMiss a hit and
+    miss filter, Thinning uses this for erosion, Skel uses Thinning to get a skeleton.
+    All based on: http://homepages.inf.ed.ac.uk/rbf/HIPR2/thin.htm
+    For the simple case I tested, it works fine.
+    And I fixed the pyhthon version of SimpleFilter while testing.
+
+2019-05-18:
+    I have rewritten the ConvFilter1D to pad the lines properly on both ends. This cleans up
+    the edge effects. Actually, the current code also removes the padding.
+    For the moment I reinstate a padding for compatibility reasons. Later I will fix all
+    running parts for this.
+    The resulted image: same dimensional as original with no rings appearing at the edges.
+    Explanation:    The major problem was caused by the jump the zero padding was creating
+    at the edges. If we fill in the outwards direction with the last values, this disappeares.
+2019-05-20:
+    Now, the edges are removed from both covolution filters, and all places where they were
+    cut off in the code, including the examples.
+    This way the whole process is cleaner.
+    2D convolution: well, padding here may cause more trouble than good. The kernel sums up
+    weighted information from a 2D area, which has orientation effects included. Thus, a
+    blind padding will add only horizontal and vertical stripes, distorting the general
+    image. Thus, skip it.
+
+2019-05-21:
+    Added Circle_fit to the Contour.py module. This takes x,y coordinates and fit a circle
+    to them. Returns the center, the radius and the fitted data in a dict.
+    This is a nice way of detecting circles and to analize circular segments detected in
+    images.
+    I have checked the source code and added proper links to the sources of this algorithm.
+
+2019-06-11:
+    BPass() does not need the 'noclip' option anymore, since the 1D convolution filter manages
+    the edge problem automatically. Thus, this option looses only resolution in vain.
+
+2019-06-28:
+    This may break some code: I removed the background subtraction from the GaussDeblurr. If
+    KillZeros is False, return the convolved image as is, the user have a chance to play with it.
+
+2019-10-11:
+    GaussDeblurr: killing zero focused on the background correction. However, this way we still
+    have minor negative values remaining in the image. Now, I added another round of killing zeros
+    after the second colvolution step as well.
+
+2020-01-31:
+    Looking quite a bit into the fine parts of smoothening curves using Gaussians, I found two
+    important things:
+    1. if the window of the Gaussian is too narrow (c.a. r < 3*w), there is a significant shift
+        caused by the constant offset (even one of 0.01) of the kernel. In such cases subtracting
+        the minimum and renormalizing even with the sum does a better job than the original.
+    2. it makes also a good deal of difference to subtract the mean of the signal before using FFT
+        convolution, then adding it back if the kernel was for smoothing and not for differential.
+        In the latter case adding it back would offset the result, which is not a good idea.
+    For now, I implemented 1. into the GaussKernel function, and 2. into the GaussDeblurr.
+
+2020-06-18:
+    Added a Compress function to do a simple power law transform on data. The idea is, that
+    for many cases it is useful to do this relative to the mean of the image, that is using:
+    img.mean()*(img/img.mean())**gamma, where gamma is the exponent
+    Naturally, gamma < 1 compresses whyle gamma > 1 expands the dynamic range of the image.
+
+2020-07-14:
+    A tiny correction. For histogram to have N bins, N+1 needs to be sent to the histogram program. If N is an integer.
+
+2020-08-19:
+    The bwanalyze can do nice things. While we are at it, it can also convert the x,y (i,j) values
+    to polar coordinates now, and return them together with the intensities.
+
+2021-01-05:
+    Add a range parameter to hist(). This is from the numpy.histogram to define the edges of the
+    bins. It allows for uniformized histograms.
+
+2021-01-11:
+    Add a SimpleContour function, to finde the outer edge of on images. This runs through the lines
+    and takes the min/max of the valid pixels. It can return a (2, image.shape[1]) array with the
+    i and j indices, or a binary image where the outer part is filled.
+
+2021-01-20:
+    Fix read_img() for color images. At least to some extent.
+    The idea is: the converted inp array has a length and a second dimension of 3, an indicator of
+    a color stack.
+
+2021-08-11:
+    A sligth fix: in composite image if norm is False, still convert the images to unsigned one
+    byte images ('u1').
+
+2021-09-07:
+    fix a missing declaration bug in OverPlot
+
+2021-09-10:
+    The python source of the Distance1D filter has an error, checking against L > bg, when there
+    is no bg defined. Now, I should remember if this is L < inf or L > 0 should be. I am not sure,
+    so for now it is set to L < inf.
+
+2021-09-15:
+    Fixed the python source of the distance filter. Here the while(True) is not sufficient, because
+    we are not in C. Here we need to make sure the index does not run outside the list, so limit it
+    to >0 and < N (actually directly use len()) limits.
+    Also the indx != [] is problematic when indx is a list, so use len(indx) < 1 to make sure.
+    The code is working, it is about 100x slower than the C code on my laptop.
+
+2021-11-18:
+    change the image plot orientation from 'lower' to 'upper' in the display, because this
+    produces the proper image orientation when compared to other image viewers.
+
+2021-12-06:
+    Fix the missing (int) conversion ins GrayErode and GrayDilate().
+
+2022-01-03:
+    Fixed the documentation of bwanalyze, now all is systematically set to key <= 0 and key > 0
+    cases.
+2022-01-20:
+Histogram is a bit confusing when we try sending a bin array. I have cleaned a bit the code to fix this. Adding 1 to the bin number is now removed, as unnecessary. The only extra this function delivers is the integral and normalized integral distributions.
+
+2022-01-27:
+    Added vmin and vmax to display for controlling the image color spread.
+
+2022-02-07:
+    I fot at last the compilation right. The pch.cpp file takes care of a dummy entry point allowing to skip the NOTENTRY option, then Visual Studio 2022 cl compiles well.
+    The command is:
+```
+cl pch.cpp *.c -Ox -MD -link -DLL -nologo -INCREMENTAL:NO -def:.\libCsources.def -out:libCsources.dll
+```
+    The resulted libCsources.dll has to be copied to the python3.10/lib library, otherwise it will
+    not load (it has to be in the search path in sys.path).
+    At the moment distutils does not pick up the compiler properly, something is missing.
+    The manual part works fine.
+
+2022-03-24:
+    Changed SimpleContour to run on both the X and Y axis and identify edge pixels, fill the image
+    with them. This way we have a full around detection for objects.
+
+    Fix the distance transform:
+    The python original was ignoring empty lines, allowing for a quicker calculation. The C code
+    however was considering not really consistently the edges as 0. Which is wrong.
+    Now, the code checks for the presence of 0 pixels in a line, and starts working from them away.
+    If a line is empty, it remains all infinite.
+    The multiplication of two INT_MAX values in C makes something out of them (overflow)... Thus,
+    it is now checked manually: if that comes, do not square them (if square distance is required)
+    The current code should work fine for internal and external structures.
+    And copying of the C sources library is broken in python 3.10.
+
+2022-05-03:
+    added the alpha parameter to display() for transparency control
+
+2022-05-04:
+    Look at the BPass filter and related components. The FWHM -> sigma (or width) conversion in the GaussKernel is wrong. The FWHM = sqrt(8 ln(2)) sigma. Equation is now corrected.
+    Also change the default width if not specified to window radius / 4, thus we have a more complete Gaussian as the result.
+
+    In BPass, fist change the width data to float, to avoid any rounding problems, then fix the width of the Gaussian filter to make sure it is 3 times the sigma (for good normalization).
+
+    Fix GaussDeblurr to GaussDeblur. Keep the version with the typo as an alias for the time being.
+
+2022-10-28:
+    I have by now the package reconfigured to install using pip. Problem is the build: it does not
+    seem to call the compiler on Windows. Maybe I have to do a build for this, I am not sure for
+    now.
+
+2022-10-29:
+    For now, I have hacked the setup script to place the library file together with the source py
+    files, so the program can find them. Now the compiling runs as:
+    python setup.py bdist_wheel
+    This works fine, then pip installs the package properly.
+
+    It is also time to move to github for the better coverage, and because I am working there on
+    a bunch of projects.
