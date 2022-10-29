@@ -1,0 +1,20 @@
+; A definition file for the Csources exports, made by hand. In future this may
+; change...
+; Date: 2010 July
+;LIBRARY libCsources
+;DESCRIPTION "ImageP accelerators"
+EXPORTS
+bwfloodlist
+bwlabel
+DistanceFilter1DL1
+DistanceFilter1D
+Hit_Miss
+MinMaxMeanVar
+PeakFind
+Perimeter
+RankFilter
+SimpleDilate
+SimpleErode
+SimpleFilter
+SimpleFilter1D
+Thinning

@@ -1,0 +1,9 @@
+include *.txt
+include setup.py
+include ImageP/*.py
+include src/*
+include test/*.py
+include test/*.tif
+include Example/[A-Z0-9]*.py
+include *.dll
+include *.so
