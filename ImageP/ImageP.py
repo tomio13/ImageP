@@ -749,7 +749,8 @@ def ParticleTrack(LocalPos, maxstep, minlength=5, maxgap=0, verbose=False):
                             #if there are more than one, we need only one
                             #the others we should keep for further tracking
                             #the bool type is important here!
-                            KeepIndx = ones(len(r), dtype=bool)
+                            # KeepIndx = ones(len(r), dtype=bool)
+                            KeepIndx = ~indx
 
                             #we need the actual index of the first hit:
                             indx = indx.nonzero()[0][0]
@@ -768,10 +769,15 @@ def ParticleTrack(LocalPos, maxstep, minlength=5, maxgap=0, verbose=False):
 
                             #now the position values:
                             for currkey,vallist in frame.items():
-                                newtrack[currkey].append( vallist[indx])
+                                # indx is a scalar, so this works:
+                                newtrack[currkey].append(vallist[indx])
                                 #Dump the position from the list:
                                 #(avoiding multiple hits)
-                                LocalPos[k][currkey] = vallist[KeepIndx]
+                                # now vallist is a list, indexing with numpy
+                                # array throws an error!
+                                # LocalPos[k][currkey] = vallist[KeepIndx]
+                                LocalPos[k][currkey] = [j for i,j in enumerate(vallist) \
+                                                        if  KeepIndx[i]]
                             #end filling up hits and kept list
                         #end of if: found a hit
                     #end of if: having a position...

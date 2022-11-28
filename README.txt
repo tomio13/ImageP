@@ -1,5 +1,5 @@
 This collection of algorithm is an implementation of particle tracking related
-image processing. The work is based on the publications of prof. Grier, and 
+image processing. The work is based on the publications of prof. Grier, and
 various internet resources of the code available for IDL and Matlab.
 
 The whole thing was originally based on scipy and numpy, and also using pylab

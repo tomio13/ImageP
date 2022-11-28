@@ -913,8 +913,15 @@ cl pch.cpp *.c -Ox -MD -link -DLL -nologo -INCREMENTAL:NO -def:.\libCsources.def
 2022-10-29:
     For now, I have hacked the setup script to place the library file together with the source py
     files, so the program can find them. Now the compiling runs as:
-    python setup.py bdist_wheel
+
+    ```python setup.py bdist_wheel```
+
     This works fine, then pip installs the package properly.
 
     It is also time to move to github for the better coverage, and because I am working there on
     a bunch of projects.
+
+2022-11-28:
+    I have noticed today that ParticleTrack() breaks because of indexing a list with a numpy array.
+    One possibility is to convert the list to an array. The other is to run a list indexing.
+    Let us try the latter one.
