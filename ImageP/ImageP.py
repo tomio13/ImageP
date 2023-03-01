@@ -52,7 +52,7 @@ import matplotlib.pyplot as pl
 
 from numpy import histogram, zeros, ones, arange, asarray, sqrt
 
-from numpy import abs, diff, bool, float, int, uint, int16, inf, log
+from numpy import abs, diff, uint, int16, inf, log
 
 from numpy import linalg, ndarray, concatenate, polyfit
 from numpy import hstack, argsort, polyval, linspace

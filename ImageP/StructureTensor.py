@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-from numpy import pi, linspace, zeros, ones, sin, cos, sqrt, floor, arange,\
-                arctan2
+from numpy import (pi, linspace, zeros, ones, sin, cos, sqrt, floor, arange,
+                arctan2)
 from matplotlib import pyplot as pl
 
 from . Kernels import *

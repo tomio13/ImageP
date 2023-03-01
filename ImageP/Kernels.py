@@ -10,8 +10,8 @@
 
 """
 
-from numpy import zeros, asarray, arange, indices, log, exp, sqrt,\
-                    abs, meshgrid, pi, sin, cos, floor
+from numpy import (zeros, asarray, arange, indices, log, exp, sqrt,
+                    abs, meshgrid, pi, sin, cos, floor)
 
 #######################################################
 # List of functions defined / exported here:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-from numpy import pi, linspace, zeros, ones, sin, cos, sqrt, floor, arange,\
-                matrix, array, abs, append, asarray, arctan2, argsort
+from numpy import (pi, linspace, zeros, ones, sin, cos, sqrt, floor, arange,
+                matrix, array, abs, append, asarray, arctan2, argsort)
 from numpy.linalg import inv, pinv, svd
 from matplotlib import pyplot as pl
 

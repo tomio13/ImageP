@@ -4,7 +4,7 @@ import numpy as nu
 from numpy import histogram, zeros, ones, arange, \
         asarray, resize, log, exp, indices, sqrt, inf
 
-from numpy import sin, cos, floor, abs, diff, float, int, uint
+from numpy import sin, cos, floor, abs, diff, uint
 
 #for testing only
 #from matplotlib import use
