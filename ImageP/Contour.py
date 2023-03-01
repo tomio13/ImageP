@@ -304,7 +304,8 @@ def Circle_fit(x,y, is_sort= False):
             a dict containing
             'R'         radius of fitted circle
             'x0','y0'   coordinates of the center
-            'Rerror'    radial error of the points
+            'err2'      radial error of the points
+            'chi2'      sum error of the radii
             'relError'  mean of relative error normalized to radius
     """
     if len(x) < 1:
