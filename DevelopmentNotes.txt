@@ -929,3 +929,10 @@ cl pch.cpp *.c -Ox -MD -link -DLL -nologo -INCREMENTAL:NO -def:.\libCsources.def
 2023-03-01:
     Remove deprecated numpy float, int and bool imports, these are now just the float, int and
     bool from the standard library (no import needed).
+
+2023-03-03:
+    The compile command on win10 using Visual Studio and a x86_64 bit prompt:
+    ```
+    cl pch.cpp *.c -Ox -MD -link -DLL -nologo -INCREMENTAL:NO -def:.\libCsources.def -out:libCsources.dll
+    ```
+    I have tested compilation and working with the newest against python 3.11, and it works.
