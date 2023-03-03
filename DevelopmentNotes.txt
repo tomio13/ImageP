@@ -925,3 +925,7 @@ cl pch.cpp *.c -Ox -MD -link -DLL -nologo -INCREMENTAL:NO -def:.\libCsources.def
     I have noticed today that ParticleTrack() breaks because of indexing a list with a numpy array.
     One possibility is to convert the list to an array. The other is to run a list indexing.
     Let us try the latter one.
+
+2023-03-01:
+    Remove deprecated numpy float, int and bool imports, these are now just the float, int and
+    bool from the standard library (no import needed).
