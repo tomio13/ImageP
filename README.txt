@@ -9,12 +9,16 @@ Some of these functions may be obsolete a bit, but others I find rather
 useful. Each function has its documentation in the code, please have a look.
 
 Installation:
+old way:
     python setup.py build
 
     and as root:
     python setup.py install
 
-now: pip install ImageP....whl
+now:
+    pip install ImageP....whl
+compiling:
+    python setup.py bdist_wheel
 
 Dependencies:
     numpy, matplotlib, image (PIL)
