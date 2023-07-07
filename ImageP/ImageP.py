@@ -938,7 +938,9 @@ def poly_fill( image, details=False ):
         b = y0
         polyms.append([a,b])
 
-        Nsi = sqrt( ((x1-x0)/dfi)**2 + (y1-y0)**2) +1
+        # number of points should be integer, but also
+        # a guess of how many pixels are in the circle
+        Nsi = int(sqrt(((x1-x0)/dfi)**2 + (y1-y0)**2) +1)
         xs = linspace(x0,x1,Nsi) if x1 != x0 else zeros(Nsi)+x0
         ys = a*(xs-x0) + b if x0 != x1 else \
                                     (y1-y0)*linspace(0,1.0,Nsi)+b

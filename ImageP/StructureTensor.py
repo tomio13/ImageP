@@ -37,7 +37,7 @@ def StructureTensor( img, keys="aetdrc", threshold= 0.01,\
                         operation (first calculate the derivatives, then
                         average them with a Gaussian kernel. This defines
                         the sigma for the smoothing kernel)
-        H           Harris parameter for R = det(A) - k Tr^2(A),
+        H           Harris parameter for R = det(A) - H Tr^2(A),
                     where 'A" is the smoothed matrix.
         Return:
         a dict with the various output images generated according to key

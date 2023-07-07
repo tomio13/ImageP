@@ -936,3 +936,7 @@ cl pch.cpp *.c -Ox -MD -link -DLL -nologo -INCREMENTAL:NO -def:.\libCsources.def
     cl pch.cpp *.c -Ox -MD -link -DLL -nologo -INCREMENTAL:NO -def:.\libCsources.def -out:libCsources.dll
     ```
     I have tested compilation and working with the newest against python 3.11, and it works.
+
+2023-07-07:
+    Found a bug in poly_fill: the number of points Nsi was float. Thus, it is now forced to be
+    integer.
