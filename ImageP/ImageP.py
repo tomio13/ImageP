@@ -1022,7 +1022,11 @@ def bwanalyze(bwimg, key=1, feature="", WithMin= False):
 
         Refs: Jahne et al. Digital Image Processing
         Haralick and Shapiro, Computer and Robot Vision vol I,
-        Addison-Wesley 1992, Appendix A.
+        Addison-Wesley 1992, Appendix A1.4 and A1.9.2
+
+        Relation between axis length and eigenvalues, eigenvectors.
+        The eigenvalues correspond to the dispersion perpendicular
+        to the eigenvectors.
     """
     results = {}
 
@@ -1070,11 +1074,12 @@ def bwanalyze(bwimg, key=1, feature="", WithMin= False):
         return results
     #end if
 
-    #meaningful pixels in the binary / gray image:
+    # meaningful pixels in the binary / gray image:
     indxindx = indx.nonzero()
+    # because rows are Y coordinates, columns are X, we use:
     Yindx = indxindx[0]
     Xindx = indxindx[1]
-    #we use weights: intensity for gray, or ones for binary = geometric parameters
+    # we use weights: intensity for gray, or ones for binary = geometric parameters
     I = bwimg[Yindx, Xindx] if key <= 0 else ones(Xindx.shape, dtype=float)
     IN = float(I.sum())
 
@@ -1102,6 +1107,7 @@ def bwanalyze(bwimg, key=1, feature="", WithMin= False):
                                                         dtype=float)
     #end if
 
+    # recenter the X,Y arrays:
     Xindx = Xindx.astype(float) - center[0]
     Yindx = Yindx.astype(float) - center[1]
 
@@ -1110,17 +1116,21 @@ def bwanalyze(bwimg, key=1, feature="", WithMin= False):
         xy = -(I*Xindx*Yindx).sum()/IN
         xx = (I*Xindx*Xindx).sum()/IN
         yy = (I*Yindx*Yindx).sum()/IN
+
+        # for axis length calculation:
         common2 = (xx - yy)**2 + 4*xy*xy
         common = sqrt(common2)
 
-        theta = asarray([[yy,xy],[xy,xx]])
+        # theta = asarray([[yy,xy],[xy,xx]])
+        theta = asarray([[xx,xy],[xy,yy]])
         thetaeig = linalg.eig(theta)
         thetaeigval = asarray(thetaeig[0])
         thetaeigvec = asarray(thetaeig[1])
 
         results['Eigenvalues'] = thetaeigval
-        results['Eigenvector1'] = thetaeigvec[:,0]
-        results['Eigenvector2']= thetaeigvec[:,1]
+        # for some reason these vectors get swapped...
+        results['Eigenvector1'] = thetaeigvec[:,0][::-1]
+        results['Eigenvector2']= thetaeigvec[:,1][::-1]
         #from Jahne: Digital Image Processing, chapter 19, eq: 19.6
         results['Eccentricity'] = common2/(xx+yy)**2
         results['MajorAxis'] = sqrt(2.0*(xx + yy + common))

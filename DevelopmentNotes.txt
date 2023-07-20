@@ -940,3 +940,7 @@ cl pch.cpp *.c -Ox -MD -link -DLL -nologo -INCREMENTAL:NO -def:.\libCsources.def
 2023-07-07:
     Found a bug in poly_fill: the number of points Nsi was float. Thus, it is now forced to be
     integer.
+
+2023-07-20:
+    I need to know which eigenvector belongs to the major axis, so clean this part up a bit in
+    bwanalyze()
