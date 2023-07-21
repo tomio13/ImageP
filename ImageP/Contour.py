@@ -276,6 +276,7 @@ def ActiveContour(img, X = [], Y= [],\
     return res
 #end Active_contour
 
+
 def Circle_fit(x,y, is_sort= False):
     """ fit a circle at the data
 
@@ -304,6 +305,7 @@ def Circle_fit(x,y, is_sort= False):
             a dict containing
             'R'         radius of fitted circle
             'x0','y0'   coordinates of the center
+            'xfit', 'yfit'  the fitted points
             'err2'      radial error of the points
             'chi2'      sum error of the radii
             'relError'  mean of relative error normalized to radius
@@ -360,6 +362,7 @@ def Circle_fit(x,y, is_sort= False):
     return {'x0': a, 'y0':b, 'R':R, 'xfit':xfit, 'yfit':yfit, 'err2':err2, \
             'chi2':err2.sum(), 'relError': relErr.mean()}
 #end Circle_fit
+
 
 def SimpleContour(img, bg=0, fill= True):
     """ Run through the image, and define the left-right extremes.
