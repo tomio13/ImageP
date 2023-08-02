@@ -159,12 +159,12 @@ def ActiveContour(img, X = [], Y= [],\
 #    GimX = ConvFilter(V, Gkx)[25:-26]
 #    GimY = ConvFilter(V, Gky)[25:-26]
     Rk = 2*width
-    gk = GaussKernel( Rk, width, OneD= True)
-    gkd = -GaussKernel( Rk, width, OneD= True, deriv= 1)
+    gk = GaussKernel(Rk, width, OneD= True)
+    gkd = -GaussKernel(Rk, width, OneD= True, deriv= 1)
 #    GimX = ConvFilter(V, Gkx)[2:-3]
 #    GimY = ConvFilter(V, Gky)[2:-3]
-    GimX = ConvFilter1D( V, gkd, kernel_y = gk)
-    GimY = ConvFilter1D( V, gk, kernel_y = gkd)
+    GimX = ConvFilter1D(V, gkd, kernel_y = gk)
+    GimY = ConvFilter1D(V, gk, kernel_y = gkd)
     GimX = 2*GimX/(GimX.max() - GimX.min())
     GimY = 2*GimY/(GimY.max() - GimY.min())
     GimX[ abs(GimX) < 1E-8 ] =0
@@ -341,9 +341,9 @@ def Circle_fit(x,y, is_sort= False):
     R = sqrt(A[1]*A[1]+A[2]*A[2]-4*A[0]*A[3])/abs(A[0])/2;
 
     #calculate error, etc...
-    x1 = x-a
+    x1 = x - a
     y1 = y - b
-    alpha = arctan2(y1,x1)
+    alpha = arctan2(y1, x1)
     #x,y are sorted according to x, so the drawing is a zig-zag
     #to have improved drawing, the user can request sorting
     #with the angle (alpha)

@@ -105,7 +105,7 @@ Flib.RankFilter.restype = c_int
 #SimpleFilter1D is a sum up 'convolution' for simple cases
 #much faster than FFT for small kernels (3,5,7,9 wide and high)
 #we may need to define the kernels as well somewhere
-#Parameters: image, width, height, 
+#Parameters: image, width, height,
 #           kernel, kernel_lenght,
 #           return_image
 Flib.SimpleFilter1D.argtypes = [array_2d_double, c_int, c_int,\
@@ -524,11 +524,12 @@ def PerimeterImage(img, WithMin=False, verbose=False):
     return res.astype( img.dtype)
 #end of PerimeterImage
 
-def SimpleErode(img, WithMin=False, verbose=False):
+def SimpleErode(img, times= 1, WithMin=False, verbose=False):
     """ Take an image and erode pixels which do not have 8 nonzero neighbours.
 
         Input parameters:
             img:        Image (integer)
+            times:      number of times to erode the image
             WithMin     use img.min() as background or work on nonzero pixels
             verbose:    plot the resulted image
 
@@ -540,19 +541,32 @@ def SimpleErode(img, WithMin=False, verbose=False):
         return None
     #end if
 
+    if times < 1:
+        return img
+
     if WithMin :
         bkg = img.min()
     else:
         bkg = 0
     #end if
-    res = nu.zeros(img.shape, dtype= nu.intc)
+
     if img.dtype != nu.intc or img.dtype != nu.uintc:
         img = img.astype(nu.intc)
 
-    if Flib.SimpleErode( img, img.shape[0], img.shape[1],bkg, res) == -1:
-        print("Error eroding the image")
-        return None
-    #end if
+    for i in range(int(times)):
+        res = nu.zeros(img.shape, dtype= nu.intc)
+
+        if Flib.SimpleErode(img, img.shape[0], img.shape[1],bkg, res) == -1:
+            print("Error eroding the image")
+            return None
+        #end if
+
+        # spare some memory
+        if i > 1:
+            del img
+
+        img = res
+    # end for running times times
 
     if verbose:
         pl.clf()
@@ -563,12 +577,13 @@ def SimpleErode(img, WithMin=False, verbose=False):
     return res
 #end of SimpleErode
 
-def SimpleDilate(img, WithMin= False, verbose= False):
+def SimpleDilate(img, times= 1, WithMin= False, verbose= False):
     """ Take an image and dilate the pixels which do not have 8 nonzero
         neighbours. (add missing neighbours)
 
         Input parameters:
             img:        Image (integer)
+            times:      repeat the dilation this many times
             WithMin     use img.min() as background or work on nonzero pixels
             verbose:    plot the resulted image
 
@@ -579,20 +594,31 @@ def SimpleDilate(img, WithMin= False, verbose= False):
         print("Error: 2D images are required!")
         return None
     #end if
+    if times < 1:
+        return img.copy()
 
     if WithMin :
         bkg = img.min()
     else:
         bkg = 0
     #end if
-    res = nu.zeros(img.shape, dtype= nu.intc)
     if img.dtype != nu.intc or img.dtype != nu.uintc:
         img = img.astype(nu.intc)
 
-    if Flib.SimpleDilate( img, img.shape[0], img.shape[1],bkg, res) == -1:
-        print("Error eroding the image")
-        return None
-    #end if
+    for i in range(int(times)):
+        res = nu.zeros(img.shape, dtype= nu.intc)
+
+        if Flib.SimpleDilate( img, img.shape[0], img.shape[1],bkg, res) == -1:
+            print("Error dilating the image")
+            return None
+        #end if
+
+        if i > 1:
+            del img
+
+        img = res
+
+    # end for
 
     if verbose:
         pl.clf()

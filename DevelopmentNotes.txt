@@ -944,3 +944,12 @@ cl pch.cpp *.c -Ox -MD -link -DLL -nologo -INCREMENTAL:NO -def:.\libCsources.def
 2023-07-20:
     I need to know which eigenvector belongs to the major axis, so clean this part up a bit in
     bwanalyze()
+
+2023-07-21:
+    completed a bit the doc-string of Circle_fit.
+
+2023-07-31:
+    Added a times parameter to simple dilate and erode in the C-version first. These allow
+    to run the operations N-times immediately, for fusing or cutting features.
+    I have also modified the Pysources parth, both seems to run all right.
+    Update version to .355

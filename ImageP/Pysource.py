@@ -431,7 +431,7 @@ def PerimeterImage(img, WithMin=False, verbose=False):
     return imgresult
 #End of PerimeterImage
 
-def SimpleErode(img, WithMin=False, verbose=False):
+def SimpleErode(img, times= 1, WithMin=False, verbose=False):
     """ Take an image and remove the edge pixels based on the 8 neighbours.
         Instead of using a convolution filter, to find gradients,
         this routine goes through the image and finds pixels with
@@ -439,6 +439,7 @@ def SimpleErode(img, WithMin=False, verbose=False):
 
         Input parameters:
             img:        Image
+            times:      integer, perform erosion this many times
             WithMin     use img.min() as bkg. value
                         otherwise bkg=0
             verbose:    plot the resulted image
@@ -452,6 +453,9 @@ def SimpleErode(img, WithMin=False, verbose=False):
         return None
     #end if
 
+    if times < 1:
+        return img
+
     if WithMin :
         bkg = img.min()
     else:
@@ -462,28 +466,35 @@ def SimpleErode(img, WithMin=False, verbose=False):
         print("Using background: %.3f" %bkg)
     #end if
 
-    #Create a list of pixels to be investigated:
-    indx = (img != bkg).nonzero()
-
     Ni,Nj = img.shape
-    imgresult = img.copy()
 
-    for (x,y) in zip(indx[0],indx[1]) :
+    for i in range(int(times)):
+        #Create a list of pixels to be investigated:
+        indx = (img != bkg).nonzero()
 
-        #Edge pixels are not useable
-        if x > 0 and x < Ni-1 and y > 0 and y < Nj-1:
+        imgresult = img.copy()
 
-            #generate indices for the neighbours:
-            steplist0 = asarray([x-1,x,x+1,x,x-1,x+1,x-1,x+1])
-            steplist1 =  asarray([y,y-1,y,y+1,y-1,y+1,y+1,y-1])
+        for (x,y) in zip(indx[0],indx[1]) :
 
-            #delete all pixels in the bulk:
-            if (img[steplist0,steplist1] == bkg).any() :
-                imgresult[x,y] = bkg
+            #Edge pixels are not useable
+            if x > 0 and x < Ni-1 and y > 0 and y < Nj-1:
+
+                #generate indices for the neighbours:
+                steplist0 = asarray([x-1,x,x+1,x,x-1,x+1,x-1,x+1])
+                steplist1 =  asarray([y,y-1,y,y+1,y-1,y+1,y+1,y-1])
+
+                #delete all pixels in the bulk:
+                if (img[steplist0,steplist1] == bkg).any() :
+                    imgresult[x,y] = bkg
+                #end if
             #end if
-        #end if
-        #this way peripheral pixels are left untouched
-    #end for
+            #this way peripheral pixels are left untouched
+        #end for
+        if i > 1:
+            del img
+
+        img = imgresult
+    #end times for
 
     if verbose:
         pl.clf()
@@ -495,7 +506,8 @@ def SimpleErode(img, WithMin=False, verbose=False):
     return imgresult
 #End of SimpleErode
 
-def SimpleDilate(img, WithMin=False, verbose=False):
+
+def SimpleDilate(img, times= 1, WithMin=False, verbose=False):
     """ Take an image and expand the edges with mixing pixels.
         Instead of using a convolution filter,this routine goes
         through the image and finds pixels with at least one
@@ -503,6 +515,7 @@ def SimpleDilate(img, WithMin=False, verbose=False):
 
         Input parameters:
             img:        Image
+            times:      run dilation this many times
             WithMin     use img.min() as bkg. value
                         otherwise bkg=0
             verbose:    plot the resulted image
@@ -516,6 +529,9 @@ def SimpleDilate(img, WithMin=False, verbose=False):
         return None
     #end if
 
+    if times < 1:
+        return img
+
     if WithMin :
         bkg = img.min()
     else:
@@ -526,30 +542,38 @@ def SimpleDilate(img, WithMin=False, verbose=False):
         print("Using background: %.3f" %bkg)
     #end if
 
-    #Create a list of pixels to be investigated:
-    indx = (img != bkg).nonzero()
-
     Ni,Nj = img.shape
-    imgresult = img.copy()
 
-    for (x,y) in zip(indx[0],indx[1]) :
+    for i in range(int(times)):
+        #Create a list of pixels to be investigated:
+        indx = (img != bkg).nonzero()
 
-        #Edge pixels are not useable
-        if x > 0 and x < Ni-1 and y > 0 and y < Nj-1:
+        imgresult = img.copy()
 
-            #generate indices for the neighbours:
-            steplist0 = asarray([x-1,x,x+1,x,x-1,x+1,x-1,x+1])
-            steplist1 =  asarray([y,y-1,y,y+1,y-1,y+1,y+1,y-1])
+        for (x,y) in zip(indx[0],indx[1]) :
 
-            #delete all pixels in the bulk:
-            if (img[steplist0,steplist1] == bkg).any():
-                indx2 = (img[steplist0, steplist1] == bkg).nonzero()[0]
-                imgresult[steplist0[indx2],steplist1[indx2]] = \
+            #Edge pixels are not useable
+            if x > 0 and x < Ni-1 and y > 0 and y < Nj-1:
+
+                #generate indices for the neighbours:
+                steplist0 = asarray([x-1,x,x+1,x,x-1,x+1,x-1,x+1])
+                steplist1 =  asarray([y,y-1,y,y+1,y-1,y+1,y+1,y-1])
+
+                #delete all pixels in the bulk:
+                if (img[steplist0,steplist1] == bkg).any():
+                    indx2 = (img[steplist0, steplist1] == bkg).nonzero()[0]
+                    imgresult[steplist0[indx2],steplist1[indx2]] = \
                             (img[steplist0,steplist1]).max()
+                #end if
             #end if
-        #end if
-        #this way peripheral pixels are left untouched
-    #end for
+            #this way peripheral pixels are left untouched
+        #end for
+
+        if i > 1:
+            del img
+
+        img = imgresult
+    # end for times
 
     if verbose:
         pl.clf()
