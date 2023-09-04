@@ -953,3 +953,8 @@ cl pch.cpp *.c -Ox -MD -link -DLL -nologo -INCREMENTAL:NO -def:.\libCsources.def
     to run the operations N-times immediately, for fusing or cutting features.
     I have also modified the Pysources parth, both seems to run all right.
     Update version to .355
+
+2023-09-04:
+    SimpleDilate and SimpleErode do not handle the edges, it is time to do something with that.
+    Changed them to run the whole image and check for not crossing edges.
+

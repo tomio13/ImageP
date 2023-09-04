@@ -17,7 +17,7 @@
  * img:         image; 2D array of integers
  * Ni,Nj        size of the image
  * bg           background value -> used to compare the pixels to
- * res          resulted image - the perimeter pixels are set to 1
+ * res          resulted image
  *
  * Return value:    -1 on error, 0 on success
  */
@@ -31,26 +31,27 @@ int SimpleErode(int *img, int Ni, int Nj, int bg, int* res)
         return -1;
     }
 
-    for(i=1; i<Ni-1; i++)
+    for(i=0; i<Ni; i++)
     {
-        for(j=1; j<Nj-1; j++)
+        for(j=0; j<Nj; j++)
         {
             ii = Nj*i+j;
 
             if( *(img + ii) != bg)
             {
-                /* copy those pixels which have all 8 neighbours */
-                if( (*(img + ii+Nj )!= bg) &&\
-                        (*(img + ii-Nj)!= bg) &&\
-                        (*(img + ii +1) != bg) &&\
-                        (*(img + ii -1) != bg) &&\
-                        (*(img + ii + Nj +1) != bg) &&\
-                        (*(img + ii -Nj + 1) != bg) &&\
-                        (*(img + ii + Nj -1) != bg) &&\
-                        (*(img + ii -Nj -1) != bg))
-                {
+                /* check the neighbors if any of them is 0, stop,
+                 * else set the pixel in res
+                 */
+                if ( (i-1) > 0 && *(img+ii-1) != bg) continue;
+                if ( (j-1) > 0 && *(img+ii-Nj) != bg) continue;
+                if ( (i+1) < Ni && *(img+ii+1) != bg) continue;
+                if ( (j+1) < Nj && *(img+ii+Nj) != bg) continue;
+                if ( (j-1) > 0 && (i-1) > 0 && *(img+ii-Nj-1) != bg) continue;
+                if ( (j+1) < Nj && (i-1) > 0 && *(img+ii+Nj-1) != bg) continue;
+                if ( (j-1) > 0 && (i+1) < Ni && *(img+ii-Nj+1) != bg) continue;
+                if ( (j+1) < Nj && (i+1) < Ni && *(img+ii+Nj+1) != bg) continue;
+
                     *(res+ii) = *(img+ii);
-                }/*end if *img...*/
             }/*end if*/
         }/*for j*/
     }/*for i*/

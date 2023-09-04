@@ -158,7 +158,7 @@ print("dynamic lib: ",datafile)
 #now back to the normal setup:
 
 setup(name=PkgName,
-        version='0.355',
+        version='0.36',
         description= 'Package for particle tracking etc. in images',
             author= 'Tomio',
         author_email= 'haraszti@dwi.rwth-aachen.de',

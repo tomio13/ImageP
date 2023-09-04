@@ -608,7 +608,7 @@ def SimpleDilate(img, times= 1, WithMin= False, verbose= False):
     for i in range(int(times)):
         res = nu.zeros(img.shape, dtype= nu.intc)
 
-        if Flib.SimpleDilate( img, img.shape[0], img.shape[1],bkg, res) == -1:
+        if Flib.SimpleDilate(img, img.shape[0], img.shape[1],bkg, res) == -1:
             print("Error dilating the image")
             return None
         #end if

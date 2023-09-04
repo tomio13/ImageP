@@ -28,17 +28,19 @@
  */
 int SimpleDilate(int *img, int Ni, int Nj, int bg, int* res)
 {
-    int i, j, ii, imgi;
+    int i, j, ii, imgi, NN;
 
     if(img == NULL || res == NULL || Ni < 0 || Nj < 0)
     {
         printf("parameter error\n");
         return -1;
     }
+    /* the maximum index is: Ni*Nj */
+    NN = Ni*Nj;
 
-    for(i=1; i<Ni-1; i++)
+    for(i=0; i< Ni; i++)
     {
-        for(j=1; j<Nj-1; j++)
+        for(j=0; j< Nj; j++)
         {
             ii = Nj*i+j;
             imgi = *(img + ii);
@@ -51,28 +53,39 @@ int SimpleDilate(int *img, int Ni, int Nj, int bg, int* res)
                 /* set all neighbours which are background
                  * and not yet set in the result image
                  */
-                if( (*(img+ii +Nj) == bg) && (*(res+ii+Nj) < imgi) )
+                if( (ii+Nj) < NN && (*(img+ii +Nj) == bg) && (*(res+ii+Nj) < imgi) )
                     *(res + ii + Nj) = imgi;
 
-                if( (*(img+ii -Nj)== bg) && (*(res+ii-Nj) < imgi) )
+                if( (ii-Nj) > 0 && (*(img+ii -Nj)== bg) && (*(res+ii-Nj) < imgi) )
                     *(res+ii - Nj) = imgi;
 
-                if( (*(img+ii +1) == bg) && (*(res+ii +1) < imgi ))
+                /* if the row is at the end, do not use it
+                 * (ii+1) < NN would go to the next line
+                 */
+                if( (j+1) < Nj  &&  (*(img+ii +1) == bg) && (*(res+ii +1) < imgi ))
                     *(res+ii +1) = imgi;
 
-                if( (*(img+ii -1) == bg)&& (*(res+ii -1) < imgi ))
+                /* again, if left goes off...
+                 * (ii-1) >0 would flow back to the previous row
+                 */
+                if( (j - 1) > 0 && (*(img+ii -1) == bg)&& (*(res+ii -1) < imgi ))
                     *(res+ii -1) = imgi;
 
-                if( (*(img+ii +Nj +1) == bg) && (*(res+ii +Nj +1) < imgi))
+                /* diagonals are tricky */
+                if( (i+1)<Ni && (j+1)<Nj &&
+                        (ii+Nj+1) < NN && (*(img+ii +Nj +1) == bg) && (*(res+ii +Nj +1) < imgi))
                     *(res+ii + Nj +1) = imgi;
 
-                if( (*(img+ii -Nj +1) == bg) && (*(res+ii -Nj +1) < imgi))
+                if( (i-1) > 0 && (j+1) < Nj &&
+                        (*(img+ii -Nj +1) == bg) && (*(res+ii -Nj +1) < imgi))
                     *(res+ii - Nj +1) = imgi;
 
-                if( (*(img+ii +Nj -1) == bg) && (*(res+ii +Nj -1) < imgi))
+                if( (i+1) < Ni && (j-1) > 0 &&
+                        (*(img+ii +Nj -1) == bg) && (*(res+ii +Nj -1) < imgi))
                     *(res+ii + Nj -1) = imgi;
 
-                if( (*(img+ii -Nj -1) == bg) && (*(res+ii -Nj -1) < imgi) )
+                if( (i-1) > 0 && (j-1)>0 &&
+                        (*(img+ii -Nj -1) == bg) && (*(res+ii -Nj -1) < imgi) )
                     *(res+ii -Nj -1) = imgi;
 
             }/*end if*/
