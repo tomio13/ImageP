@@ -42,14 +42,14 @@ int SimpleErode(int *img, int Ni, int Nj, int bg, int* res)
                 /* check the neighbors if any of them is 0, stop,
                  * else set the pixel in res
                  */
-                if ( (i-1) > 0 && *(img+ii-1) != bg) continue;
-                if ( (j-1) > 0 && *(img+ii-Nj) != bg) continue;
-                if ( (i+1) < Ni && *(img+ii+1) != bg) continue;
-                if ( (j+1) < Nj && *(img+ii+Nj) != bg) continue;
-                if ( (j-1) > 0 && (i-1) > 0 && *(img+ii-Nj-1) != bg) continue;
-                if ( (j+1) < Nj && (i-1) > 0 && *(img+ii+Nj-1) != bg) continue;
-                if ( (j-1) > 0 && (i+1) < Ni && *(img+ii-Nj+1) != bg) continue;
-                if ( (j+1) < Nj && (i+1) < Ni && *(img+ii+Nj+1) != bg) continue;
+                if ((i-1) > 0 && *(img+ii-1) == bg) continue;
+                if ((j-1) > 0 && *(img+ii-Nj) == bg) continue;
+                if ((i+1) < Ni && *(img+ii+1) == bg) continue;
+                if ((j+1) < Nj && *(img+ii+Nj) == bg) continue;
+                if ((j-1) > 0 && (i-1) > 0 && *(img+ii-Nj-1) == bg) continue;
+                if ((j+1) < Nj && (i-1) > 0 && *(img+ii+Nj-1) == bg) continue;
+                if ((j-1) > 0 && (i+1) < Ni && *(img+ii-Nj+1) == bg) continue;
+                if ((j+1) < Nj && (i+1) < Ni && *(img+ii+Nj+1) == bg) continue;
 
                     *(res+ii) = *(img+ii);
             }/*end if*/

@@ -958,3 +958,5 @@ cl pch.cpp *.c -Ox -MD -link -DLL -nologo -INCREMENTAL:NO -def:.\libCsources.def
     SimpleDilate and SimpleErode do not handle the edges, it is time to do something with that.
     Changed them to run the whole image and check for not crossing edges.
 
+2023-09-05:
+    now fix SimpleErode, the C function got messed up... the logic was faulty.
