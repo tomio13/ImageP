@@ -128,8 +128,19 @@ def read_img(filename, asis = False, verbose=False):
             img.palette = None
             #Sometimes it is important: we need BW images!!!
 
-            if not asis and "I" not in img.mode:
+            # image modes:
+            # "1", "CMYK", "F", "HSV", "I", "L", "LAB",
+            # "P", "RGB", "RGBA", "RGBX", "YCbCr", "PA"
+            # if an image is RGB CYMK etc. we convert
+            # with maps, especially if a palette value is
+            # black, it may cause problems...
+            # Let us assume the palette type is still a
+            # gradual intensity image, just colored
+            # without conversion we get values between 0 and 255
+            if not asis and "I" not in img.mode \
+                    and img.mode not in ['P', 'PA']:
                 img = img.convert(mode="I")
+
             #end if
 
             #print("Getting data")
@@ -149,11 +160,11 @@ def read_img(filename, asis = False, verbose=False):
                # print("converting to U2")
                 inp = inp.astype('u2')
 
-            a.append( inp.astype('f') )
+            a.append(inp.astype('f'))
             #if all fine, go to the next:
             i = i + 1
 
-            img.seek( img.tell() + 1 )
+            img.seek(img.tell() + 1)
 
     except EOFError :
         #print("End reached at i=%d" %i)
