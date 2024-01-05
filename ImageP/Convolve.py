@@ -8,18 +8,28 @@
     Copyright:  LGPL-3
     Warranty:   For any application, there is no warranty 8).
 """
+try:
+    from . Csource import bwlabel, Thinning, HitMiss
+except:
+    print("Csource is not loadable, falling back to Python sources")
+    from . Pysource import bwlabel, Thinning, HitMiss
+#end try
+
+
 from . Kernels import *
 from . Display import display, composite
 
 from numpy import zeros, repeat, log, exp,  sqrt
-from numpy import fft, concatenate
+from numpy import fft, concatenate, asarray
 
 from time import time
 ####################################################################
-__all__=[  "BPass","ConvFilter","ConvFilter1D",\
+__all__=["BPass","ConvFilter","ConvFilter1D",\
         "MeanFilter", "GaussDeblurr", "GaussDeblur" ,"GrayErode", "GrayDilate",\
         "DownsizeImage", "UpsizeImage", "RollingBall",\
-        "EdgeDetect", "FindLocalMaxima"]
+        "EdgeDetect", "FindLocalMaxima",
+        'get_nodes', 'Skel',
+         ]
 
 
 #####################################################################
@@ -827,3 +837,54 @@ def FindLocalMaxima( img, R= 10, w= 1.0, height= 0.5, bg = None,\
     c[x+w,y+w] = 1
     return c
 #end FindLocalMaxima
+
+
+def Skel(img, verbose= False):
+    """ Erode a binary image to a skeleton.
+        Based on the internet site:
+        http://homepages.inf.ed.ac.uk/rbf/HIPR2/thin.htm
+
+        Parameters: binary image
+        Return: skeleton image
+    """
+    oldN = -1
+    N = img.sum()
+    img2 = img.copy()
+    while( N > 0 and N != oldN):
+        oldN = N
+#        img2 = thinning(img, asarray([[0,0,0],[-1,1,-1],[1,1,1]]))
+        img2 = Thinning(img2, asarray([[-1,0,0],[1,1,0],[-1,1,-1]]))
+        img2 = Thinning(img2, asarray([[0,0,-1],[0,1,1],[-1,1,-1]]))
+        img2 = Thinning(img2, asarray([[-1,1,-1],[0,1,1],[0,0,-1]]))
+        img2 = Thinning(img2, asarray([[-1,1,-1],[1,1,0],[-1,0,0]]))
+        img2 = Thinning(img2, asarray([[0,0,0],[-1,1,-1],[1,1,1]]))
+        img2 = Thinning(img2, asarray([[1,1,1],[-1,1,-1],[0,0,0]]))
+        img2 = Thinning(img2, asarray([[0,-1,1],[0,1,1],[0,-1,1]]))
+        img2 = Thinning(img2, asarray([[1,-1,0],[1,1,0],[1,-1,0]]))
+        N = img2.sum()
+        if verbose: print('Current sum:',N)
+    #end while
+    return(img2)
+#end Skel
+
+
+def get_nodes(img, kernels= cross_kernels):
+    """ find nodes in a skeleton image using kernels and the
+        HitMiss filter.
+
+        parameters:
+        img:        a 2D numpy array (image)
+        kernels:    a list of the node defining kernels (3x3)
+
+        return:
+        a tuple, with the number of nodes found and a binary
+        image indicating them
+        (a node may be larger than one pixel)
+    """
+    res = zeros(img.shape)
+    for k in kernels:
+        res = res + HitMiss(img, k)
+
+    nodes = bwlabel(res > 0)
+    return (nodes.max(), nodes >0)
+# end of get_nodes

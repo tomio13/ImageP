@@ -15,9 +15,32 @@ from numpy import (zeros, asarray, arange, indices, log, exp, sqrt,
 
 #######################################################
 # List of functions defined / exported here:
-__all__=['BoxcarKernel', 'BinomKernel', 'CircMask',\
+__all__=['cross_kernels', 'BoxcarKernel', 'BinomKernel', 'CircMask',\
         'GaussKernel', 'RotatingGaussKernel',\
         'SoebelKernel', 'BallKernel']
+
+cross_kernels=[
+        # left right top bottom
+        asarray([[-1,-1,-1],[1,1,1],[-1, 1, -1]]),
+        asarray([[-1,1,-1],[1,1,1],[-1, -1, -1]]),
+        asarray([[-1,1,-1],[1,1,-1],[-1, 1, -1]]),
+        asarray([[-1,1,-1],[-1,1,1],[-1, 1, -1]]),
+        # diagonals
+        asarray([[1,-1,1],[-1,1,-1],[1, -1, -1]]),
+        asarray([[1,-1,-1],[-1,1,-1],[1, -1, 1]]),
+        asarray([[-1,-1,1],[-1,1,-1],[1, -1, 1]]),
+        asarray([[1,-1,1],[-1,1,-1],[-1, -1, 1]]),
+        # Y-s
+        asarray([[1,-1,1],[-1,1,-1],[-1, 1, -1]]),
+        asarray([[-1,1,-1],[-1,1,-1],[1, -1, 1]]),
+        asarray([[-1,-1,1],[1,1,-1],[-1, -1, 1]]),
+        asarray([[1,-1,-1],[-1,1,1],[1, -1, -1]]),
+        # diagonal Y-s
+        asarray([[-1,1,-1],[1,1,-1],[-1, -1, 1]]),
+        asarray([[-1,-1,1],[1,1,-1],[-1, 1, -1]]),
+        asarray([[-1,1,-1],[-1,1,1],[1, -1, -1]]),
+        asarray([[1,-1,-1],[-1,1,1],[-1, 1, -1]]),
+        ]
 
 
 def GaussKernel(r=10, width=0, FWHM=0, norm=True, OneD=False, deriv=0, direction='X'):

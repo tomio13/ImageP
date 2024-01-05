@@ -960,3 +960,15 @@ cl pch.cpp *.c -Ox -MD -link -DLL -nologo -INCREMENTAL:NO -def:.\libCsources.def
 
 2023-09-05:
     now fix SimpleErode, the C function got messed up... the logic was faulty.
+    now fix SimpleErode, the C function got messed up... the logic was faulty.
+
+2024-01-04:
+    make a small filter to find nodes in a skeleton image. It turns out not that trivial,
+    because straight lines may cause some complications. Thus, this one uses 16 3x3
+    filters to identify possible crossings and the HitMiss operator to detect them.
+    The result is then groupped according to islands, allowing for a node having more
+    than a single point. This is a first version.
+
+2024-01-05:
+    Pack the get_nodes and Skel functions into the Convolve.py file, since they better
+    belong there.

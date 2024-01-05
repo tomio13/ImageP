@@ -78,7 +78,7 @@ __all__=["read_img",\
             "bwfloodlist","bwlabel","bwanalyze","despike","graythresh",\
             "hist", "poly_fill", "shift",\
             "ErodeImage", "PerimeterImage","SimpleErode","SimpleDilate",\
-            "HitMiss",\
+            "HitMiss", 'get_nodes',\
             "ExtractProfile", "StructureTensor", 'Fractal_Dimension',\
             "DistanceFilter1DL1", "DistanceFilter1D", "DistanceFilter",\
             "Thinning", "Skel", "Compress"]
@@ -1660,34 +1660,6 @@ def Fractal_Dimension( image, points = 4, details= False ):
         return D
 #end of fractal_dimension
 
-def Skel(img, verbose= False):
-    """ Erode a binary image to a skeleton.
-        Based on the internet site:
-        http://homepages.inf.ed.ac.uk/rbf/HIPR2/thin.htm
-
-        Parameters: binary image
-        Return: skeleton image
-    """
-    oldN = -1
-    N = img.sum()
-    img2 = img.copy()
-    while( N > 0 and N != oldN):
-        oldN = N
-#        img2 = thinning(img, asarray([[0,0,0],[-1,1,-1],[1,1,1]]))
-        img2 = Thinning(img2, asarray([[-1,0,0],[1,1,0],[-1,1,-1]]))
-        img2 = Thinning(img2, asarray([[0,0,-1],[0,1,1],[-1,1,-1]]))
-        img2 = Thinning(img2, asarray([[-1,1,-1],[0,1,1],[0,0,-1]]))
-        img2 = Thinning(img2, asarray([[-1,1,-1],[1,1,0],[-1,0,0]]))
-        img2 = Thinning(img2, asarray([[0,0,0],[-1,1,-1],[1,1,1]]))
-        img2 = Thinning(img2, asarray([[1,1,1],[-1,1,-1],[0,0,0]]))
-        img2 = Thinning(img2, asarray([[0,-1,1],[0,1,1],[0,-1,1]]))
-        img2 = Thinning(img2, asarray([[1,-1,0],[1,1,0],[1,-1,0]]))
-        N = img2.sum()
-        if verbose: print('Current sum:',N)
-    #end while
-    return(img2)
-#end Skel
-
 
 def Compress(img, gamma= 1.0, rel= True, verbose= False):
     """ Use a simple power law transform on the image.
@@ -1714,3 +1686,4 @@ def Compress(img, gamma= 1.0, rel= True, verbose= False):
     else:
         return(img**gamma)
 #end Compress
+

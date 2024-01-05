@@ -20,6 +20,12 @@ now:
 compiling:
     python setup.py bdist_wheel
 
+New way:
+    python -m build
+
+Install (e.g. ImageP...whl)
+    pip install dist/ImageP....whl
+
 Dependencies:
     numpy, matplotlib, image (PIL)
 
