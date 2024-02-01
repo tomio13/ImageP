@@ -8,7 +8,7 @@
 
 """
 from ImageP import *
-from numpy import linspace, zeros, sqrt, nanmax, append, pi, arange, asarray
+from numpy import linspace, zeros, sqrt, nanmax, append, pi, arange, asarray, abs
 from numpy import savez_compressed, quantile
 from matplotlib import pyplot as pl
 #do not even bother plotting:
@@ -442,7 +442,7 @@ for fn in lst[0:N]:
     b = nanmax(c, axis=0)
     #b = b*(b > 0)
     #instead, do inplace erasure, we need sparing some memory
-    b[ b <= 0 ] = 0
+    b[b <= 0] = 0
     if masked and maskimg.sum() > 0:
         b[ maskimg == 0 ] = 0
 
@@ -477,8 +477,8 @@ for fn in lst[0:N]:
         if UseStructure:
             d = StructureTensor(
                     img,
-                    radius= StructureScaler*RGaussSm,
-                    width= StructureScaler*WGaussSm
+                    radius= StructureScaler*abs(RGaussSm),
+                    width= StructureScaler*abs(WGaussSm)
                     )
             mask = d['indx']&(d['c'] < 0.5)
 
@@ -497,13 +497,13 @@ for fn in lst[0:N]:
                 #how many pixels are at the perimeter of this patch?
                 pbi = PerimeterImage(bimg == bi).sum()
                 #what is the 'size' of this patch?
-                rabi = sqrt( float( bwanalyze(bimg, bi, 'a')['PixArea'] )/pi)
+                rabi = sqrt(float(bwanalyze(bimg, bi, 'a')['PixArea'])/pi)
                 ratbi = pbi/rabi
 
                 #MinBlob and MaxBlob were multiplied with pi at writing the report...
                 if ratbi > MinBlob and ratbi < MaxBlob:
                     #kill pixels, not the mask:
-                    b[ bimg == bi] = 0
+                    b[bimg == bi] = 0
             #end for bi in patches
             del(pbi, rabi, ratbi)
         #end blob removal
