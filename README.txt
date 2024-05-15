@@ -8,6 +8,9 @@ as a plotting resource.
 Some of these functions may be obsolete a bit, but others I find rather
 useful. Each function has its documentation in the code, please have a look.
 
+Lincense: as of 2024 May I put it under CC(4)-BY license, see:
+https://creativecommons.org/licenses/by/4.0/
+
 Installation:
 old way:
     python setup.py build
