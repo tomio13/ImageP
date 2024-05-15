@@ -38,6 +38,7 @@ config = {'dir': './', 'outdir': './Results', 'ext':'.png', 'dpi': 150, \
 # Blob removal: RemoveBlob, MinBlob and MaxBlob: k/ra > 3*pi and k/ra < 6*pi
 # Save arrays in binary numpy format compressed: dump = True
 # SoftThreshold: use the minimum of relative mean or Otsu's threshold
+# invert: if the keyword is present, invert the images
 
 ######################## FUNCTIONS #########################
 
