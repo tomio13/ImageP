@@ -435,7 +435,7 @@ for fn in lst:
     fn_out = os.path.splitext(os.path.split(fn)[-1])[0]
 
     # Plot( h['pockets'][1:], rel_dist, xlabel='radius, $\mu$m', ylabel='relative number density',
-    Plot( h['midpoints'], rel_dist, xlabel='radius, $\mu$m', ylabel='relative number density',
+    Plot( h['midpoints'], rel_dist, xlabel= r'radius, $\mu$m', ylabel='relative number density',
             title='radial number density')
     Plot([h['midpoints'][i_rad]], [rel_dist[i_rad]], fmt='ro', newplot= False,
             dpi=dpi, ext=ext, filename= "%s-radial-plot" %fn_out,
@@ -499,7 +499,7 @@ for fn in lst:
                 "# Distance distribution in segments from the explant")
 
         Plot(h['midpoints'], h['dist'],
-                xlabel='distance, $\mu$m', ylabel='Count',
+                xlabel= r'distance, $\mu$m', ylabel='Count',
             title='radial slotted distance',
             dpi= dpi, ext= ext, outpath= outdir,
             filename= '%s-radial-segmented-histogram' %fn_out)
@@ -535,7 +535,7 @@ for fn in lst:
                 "# Distance distribution from the edges of the explant")
 
         Plot( h['pockets'][1:], h['dist'],
-                xlabel='distance, $\mu$m', ylabel='Count',
+                xlabel= r'distance, $\mu$m', ylabel='Count',
             title='distance distribution from the explant',
             dpi= dpi, ext= ext, outpath= outdir,
             filename= '%s-distance-from-mask-histogram' %fn_out)

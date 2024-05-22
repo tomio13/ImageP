@@ -4,7 +4,7 @@
     Author:     T. Haraszti
     Email:      haraszti@dwi.rwth-aachen.de
     Date:       2016-06- 2021
-    Licence:    CC(4)
+    Licence:    CC(4)-BY
 
 """
 from ImageP import *
