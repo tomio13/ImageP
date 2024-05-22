@@ -687,8 +687,11 @@ def DistanceFilter1DL1(L, squared= False):
         1D distance values
     """
 
-    L1 = L.copy().astype(nu.intc)
+    L1 = L.copy()
+    # nu.inf is not integer
     L1[L == nu.inf] = 2**31-1
+    L1 = L1.astype(nu.intc)
+
     sq = 1 if squared else 0
     errtest = Flib.DistanceFilter1DL1(L1, len(L1), sq)
 
@@ -727,9 +730,11 @@ def DistanceFilter1D(L, inf_th= -1 ):
     if inf_th >= 0:
         L[L > inf_th] = nu.inf
 
-    L1 = L.copy().astype(nu.intc)
+    # L1 = L.copy().astype(nu.intc)
+    L1 = L.copy()
 
     L1[L == nu.inf] = 2**31-1
+    L1 = L1.astype(nu.intc)
     d = nu.zeros( L1.shape, dtype= nu.intc)
     errtest = Flib.DistanceFilter1D(L1, d, len(L1))
     if( errtest < 0):    raise ValueError('Invalid Input')
