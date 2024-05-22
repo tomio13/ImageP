@@ -687,12 +687,10 @@ def DistanceFilter1DL1(L, squared= False):
     downlist = ilist[:-1:-1] if ilist[-1] == 0 else ilist[::-1]
 
     if uplist.size > 0:
-        #for i in range(1, N):
         for i in range(1, N):
-            res[i] = min( res[i], res[i-1]+1)
+            res[i] = min(res[i], res[i-1]+1)
 
     if downlist.size > 0:
-        #for i in range(N-1)[::-1]:
         for i in range(N-1)[::-1]:
             res[i] = min(res[i], res[i+1]+1)
 
@@ -700,18 +698,19 @@ def DistanceFilter1DL1(L, squared= False):
     return res
 #end DistanceFilter1DL1
 
+
 def DistanceFilter1D(L, inf_th = -1):
     """ Implement an Euclidean distance filter in 1D.
 
         Based on P. F. Felzenszwalb and D. Huttenlocher
         Theory of Computing 8:415-428 (2012)
 
-        First calcualte the lower parabolic envelop for L,
+        First calcualte the lower parabolic envelope for L,
         then the distance transform.
         This algorithm allows for any gray scale images, not only
         binary ones.
         The transform is defined as:
-        min( (x-x')**2 + f(x')) for every x'
+        min((x-x')**2 + f(x')) for every x'
 
         This version is a bit different from the published one,
         because that one did not work on structures at the edges.
@@ -719,7 +718,7 @@ def DistanceFilter1D(L, inf_th = -1):
         and > bg to measure the distance for...
 
         Parameters:
-        L           a data array (1D)
+        L           a data array (1D) line
         inf_th:     if >= 0, then pixels > inf_th are set to inf
 
         Retrurn:
@@ -736,8 +735,8 @@ def DistanceFilter1D(L, inf_th = -1):
     #algorithm wants to go backwards on an empty list making trouble
     #so, test this first:
     #indx = arange(N)[(L < inf)] -> using nonzero is 2x faster
-    if( inf_th >= 0):
-        L[ L > inf_th] = inf
+    if(inf_th >= 0):
+        L[L > inf_th] = inf
 
     indx = (L < inf).nonzero()[0]
 
