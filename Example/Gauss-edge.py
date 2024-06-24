@@ -297,6 +297,7 @@ quantile_list = []
 for fn in lst[0:N]:
     img = read_img(fn)
     fn = os.path.split(fn)[1]
+    ffn = os.path.splitext(fn)[0]
     rep.write("Read image from file:", fn, color='cyan')
 
     #Should we invert the image around its average background?
@@ -398,19 +399,21 @@ for fn in lst[0:N]:
         #print("Smoothening with a Gaussian, window: %d, width: %.3f" %(RGaussSm, WGaussSm))
         if deriv == 1:
             rep.write("Calculating derivatives");
-            img= EdgeDetect( img, R= RGaussSm, w= WGaussSm, \
+            img= EdgeDetect(img, R= RGaussSm, w= WGaussSm, \
                     KillZero= ('CutNegative' in config))
-        elif deriv > 0 or (RGaussBg <= 0 or WGaussBg <= 0):
-            rep.write("Calculating Gauss smoothing")
 
-            gk = GaussKernel( RGaussSm, WGaussSm, OneD= True, deriv= deriv)
+        elif deriv > 0 or (RGaussBg <= 0 or WGaussBg <= 0):
+            # typically deriv == 2:
+            rep.write("Calculating Gauss smoothing with derivative set to order", deriv)
+
+            gk = GaussKernel(RGaussSm, WGaussSm, OneD= True, deriv= deriv)
             img = ConvFilter1D(img,gk)
 
-        # for use the gamma correction for the derivatives only:
-        if deriv > 0 and gamma > 0:
+        # use gamma for any case
+        if gamma > 0:
             rep.write('apply gamma:', gamma)
-            # apply gamma using the relative compression around the mean
             img = Compress(img, gamma, rel= True)
+
         #end sorting out which filter
     #end if smoothing
 
@@ -530,7 +533,7 @@ for fn in lst[0:N]:
     rep.write("Selected intensity threshold is", th, color='green')
 
     #Output filtered angle and intensity images
-    pl.figure(1)
+    #pl.figure(1)
     pl.clf();
     pl.gray();
     if masked:
@@ -539,8 +542,7 @@ for fn in lst[0:N]:
         pl.imshow(img)
     pl.axis('off')
     pl.title("Filtered image %s" %fn)
-    fout = os.path.join(outdir, "%s-filtered-image%s" \
-            %(os.path.splitext(fn)[0], ext))
+    fout = os.path.join(outdir, f"{ffn}-filtered-image{ext}")
     pl.savefig(fout, dpi= dpi, bbox_inches="tight", pad_inches=0)
 
 
@@ -551,15 +553,15 @@ for fn in lst[0:N]:
 
     ####################
     # More output:
-    pl.figure(3);
+    #pl.figure(3);
     pl.jet()
     pl.imshow(aimg)
     pl.axis('off')
     pl.title('alpha image')
-    fout = os.path.join(outdir, "%s-alpha-image.png" %os.path.splitext(fn)[0])
+    fout = os.path.join(outdir, f"{ffn}-alpha-image.png")
     pl.savefig(fout, dpi= dpi, bbox_inches="tight", pad_inches=0)
 
-    pl.figure(2)
+    #pl.figure(2)
     pl.clf();
     if masked:
         pl.imshow(b)
@@ -568,14 +570,22 @@ for fn in lst[0:N]:
     pl.gray()
     pl.axis('off')
     pl.title('Max. image')
-    fout = os.path.join(outdir, "%s-max-image.png" %os.path.splitext(fn)[0])
+    fout = os.path.join(outdir, f"{ffn}-max-image.png")
+    pl.savefig(fout, dpi= dpi, bbox_inches="tight", pad_inches=0)
+
+    # try a composite
+    fout = os.path.join(outdir, f'{ffn}-max-filtered-composite.png')
+    pl.clf()
+    pl.imshow(composite(b, img, b))
+    pl.axis('off')
+    pl.title('max-filtered-composite')
     pl.savefig(fout, dpi= dpi, bbox_inches="tight", pad_inches=0)
 
     dalpha2 = (alpha[1] - alpha[0])/2.0
     #we shift the pocket boundaries down a bit to accomodate
     #the real alpha values to the midpoints
     bins = append(alpha, alpha_max) - dalpha2
-    ais = aimg[bindx]   #the rest is set to 0 and eaningless.
+    ais = aimg[bindx]   #the rest is set to 0 and meaningless.
 
     #store some information 1:
     avg_angle.append(ais.mean())
@@ -594,10 +604,10 @@ for fn in lst[0:N]:
     #pl.thetagrids(arange(-180+da,180+da,da),labels=None)
     pl.thetagrids(arange(0,360,da),labels=None)
     pl.title('angle histogram')
-    fout = os.path.join(outdir, "%s-angle-histogram.png" %os.path.splitext(fn)[0])
+    fout = os.path.join(outdir, f"{ffn}-angle-histogram.png")
     pl.savefig(fout, dpi= dpi)
     #dump the original angles:
-    fout = os.path.join(outdir, "%s-angles.txt" %os.path.splitext(fn)[0])
+    fout = os.path.join(outdir, f"{ffn}-angles.txt")
     SaveData(['angle'],zip(ais), fout, \
             "Angle values obtained")
 
@@ -633,14 +643,14 @@ for fn in lst[0:N]:
     #pl.thetagrids(arange(-180+da,180+da,da),labels=None)
     pl.thetagrids(arange(0,360,da),labels=None)
     pl.title('angle histogram')
-    fout = os.path.join(outdir, "%s-rotated-angle-histogram.png" %os.path.splitext(fn)[0])
+    fout = os.path.join(outdir, f"{ffn}-rotated-angle-histogram.png")
     pl.savefig(fout, dpi= dpi)
 
-    fout = os.path.join(outdir, "%s-rotated-angles.txt" %os.path.splitext(fn)[0])
+    fout = os.path.join(outdir, f"{ffn}-rotated-angles.txt")
     SaveData(['angle'],zip(ais), fout, \
             "Angle values relative to their maximum (rotated)")
 
-    fout = os.path.join(outdir, "%s-histogram-data.txt" %os.path.splitext(fn)[0])
+    fout = os.path.join(outdir, f"{ffn}-histogram-data.txt")
 
     SaveData(h.keys(), zip(*h.values()), fout, \
             "Angle histogram")
@@ -648,7 +658,7 @@ for fn in lst[0:N]:
     #add normalized to the histogram:
     h2['norm_dist'] = h2['dist']/float( h2['dist'].sum() )
 
-    fout = os.path.join(outdir, "%s-rotated-histogram-data.txt" %os.path.splitext(fn)[0])
+    fout = os.path.join(outdir, f"{ffn}-rotated-histogram-data.txt")
     SaveData(h2.keys(), zip(*h2.values()), fout, \
             "Rotated angle histogram")
 
@@ -667,7 +677,7 @@ for fn in lst[0:N]:
 
     #dump numpy objects?
     if dump:
-        fout = os.path.join(outdir, "%s-numpy-dump.npz" % os.path.splitext(fn)[0])
+        fout = os.path.join(outdir, f"{ffn}-numpy-dump.npz")
         savez_compressed(fout, alpha= aimg, maximg= b, indx= bindx )
 
 #end for...
