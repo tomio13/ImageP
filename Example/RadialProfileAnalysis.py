@@ -126,10 +126,11 @@ scaler = config['scaler'][-1]
 
 scaler_dict = {}
 if os.path.isfile(os.path.join(indir, config['scaler_file'][-1])):
+
     with open(os.path.join(indir, config['scaler_file'][-1])) as fp:
         txtlines = fp.readlines()
         if txtlines and ',' in txtlines[0]:
-            linelist = [i.split(',') for i in txtlines]
+            linelist = [i.split(',') for i in txtlines if not i.startswith('#')]
             scaler_dict = {i[0]:float(i[1]) for i in linelist if len(i) > 1}
             del(linelist, txtlines)
 # end getting scaler_file
@@ -198,8 +199,11 @@ else:
     rep.write('No background correction is requested')
 # end if background
 
-if scaler_dict:
-    rep.write('List of scalers is loaded', len(scaler_dict))
+if config['scaler_file'][-1]:
+    if scaler_dict:
+        rep.write('List of scalers is loaded', len(scaler_dict))
+    else:
+        rep.write('List of scalers could not be loaded', config['scaler_file'][-1], color='red')
 
 if scaler != 1:
     rep.write('Global scaler is set to', scaler, 'micron/pixels')
@@ -369,16 +373,9 @@ for fn in lst:
         bwimg2 = bwimg.copy()
         rep.write('Performing erosion/dilation/erosion cycles')
 
-        for i in range(N_erode):
-            bwimg2 = SimpleErode(bwimg2)
-        #end for
-        for i in range(N_dilate):
-            bwimg2 = SimpleDilate(bwimg2)
-        #end for
-
-        for i in range(N_erode2):
-            bwimg2 = SimpleErode(bwimg2)
-        #end for
+        bwimg2 = SimpleErode(bwimg2, N_erode)
+        bwimg2 = SimpleDilate(bwimg2, N_dilate)
+        bwimg2 = SimpleErode(bwimg2, N_erode2)
 
         ind2i, ind2j = bwimg2.nonzero()
         # Alternatively we could go for a center of mass,
