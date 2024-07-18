@@ -25,6 +25,8 @@ config = {'dir': './', 'outdir': './Results', 'ext':'.png', 'dpi': 150, \
         'Qwidth': 0.5,\
         'RGaussBg': -250, 'WGaussBg': -100,\
         'RGaussSm': -10, "WGaussSm": -0.75, \
+        # enable a size filter if non-negative
+        'MinSize': -1, 'MaxSize': -1,
         'gamma': -1,\
         'deriv': 0, 'N':-1,\
         'Langle': 15, 'Wangle': 0.75, 'Rangle':25 ,\
@@ -120,7 +122,7 @@ if __name__ == '__main__':
 #end if main...
 
 #process the config file, and use defaults from config:
-config = ReadConf( configfile, config)
+config = ReadConf(configfile, config)
 
 #manage file paths:
 #print("Config dir", config['dir'])
@@ -224,6 +226,11 @@ elif RGaussSm > 0 and WGaussSm > 0:
                     RGaussSm, "width:",WGaussSm)
 else:
     rep.write("No Gaussian correction is made\n")
+
+if config['MinSize'][-1] > 1 or config['MaxSize'][-1] > 0:
+    rep.write('Apply size filter with minimum',
+              config['MinSize'][-1],
+              'and maximum', config['MaxSize'][-1], 'pixels')
 
 if gamma > 0:
     rep.write('Apply a power conversion after background correction and smoothing, with power', gamma)
@@ -512,21 +519,31 @@ for fn in lst[0:N]:
             del(pbi, rabi, ratbi)
         #end blob removal
 
-    #this threshold makes rich, detailed results:
+    # the soft threshold uses the mean,
+    # the conservative one Otsu's method:
     th = min(graythresh(bb),\
                 bb.mean()/bb.max()) if SoftThreshold else graythresh(bb)
     #end generate threshold
 
-    #a more conservative one only about the major features is:
-#    th = graythresh(b)
-
-    #now, we want to filter the results for noise / other problems
+    # now, we want to filter the results for noise / other problems
     #
-    #here we filter along the alpha axis, so it does not matter what
-    #we get as a result in the masked areas...
-    #filter with b (mask is already imposed)
+    # here we filter along the alpha axis, so it does not matter what
+    # we get as a result in the masked areas...
+    # filter with b (mask is already imposed)
     bindx = b > th*b.max()
-    #otherwise python3 makes some funny stuff...
+
+    # do we have size filtering activated?
+    if config['MinSize'][-1] > 1 or config['MaxSize'][-1] > 0:
+        rep.write('calling size filter')
+        bindx = bwlabel(bindx,
+                        # MinSize is at least 1 (default)
+                        MinSize= max(int(config['MinSize'][-1]), 1),
+                        # default MaxSize is -1, we need 0 for being not set
+                        MaxSize= max(int(config['MaxSize'][-1]), 0)
+                        ) > 0
+
+    # convert the image to a mask
+    # otherwise python3 makes some funny stuff...
     bindx = bindx.astype(bool)
 
     print("it took: %.3f seconds" %(time()-tt))
