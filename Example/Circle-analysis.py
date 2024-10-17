@@ -3,8 +3,8 @@
     author: T. Haraszti
     Licence: CC(4)-BY
     Warranty: None
-    Date: 2020 -
-    version: 4.1
+    Date: 2020 - 2024-
+    version: 4.3
 """
 
 import os
@@ -63,10 +63,13 @@ def Get_Circles(img,
     """
 
     if th <= 0:
-        th = graythresh(img) * img.max()
-        print('set threshold to:', th)
-    elif th < 1.:
+        th = graythresh(img)
+        print('set relative threshold to:', th)
+
+    if th < 1.:
         th = th * img.max()
+    print('applied thrshold intensity:', th)
+
     # end sorting out threshold
     # to detect the lines, the structure we need
     b = img > th
@@ -135,18 +138,15 @@ def Get_Circles(img,
         #now we should have a circle:
         x,y = d.nonzero()
         fit = Circle_fit(x,y,True)
+        # Circle_fit returns keys: ['R', 'x0', 'y0', 'xfit', 'yfit', 'err2',
+        #                               'chi2', 'relError']
         # load some fit parameters to rowData
         translate = [['R', 'R'], ['x0','x0'],
-                     ['y0', 'y0'], ['x', 'xfit'],
-                     ['y', 'yfit']]
+                     ['y0', 'y0'], ['xfit', 'xfit'],
+                     ['yfit', 'yfit']]
         for klist in translate:
             rowData[klist[1]] = fit[klist[0]]
 
-        #rowData['R'] = fit['R']
-        #rowData['x0'] = fit['x0']
-        #rowData['y0'] = fit['y0']
-        #rowData['x'] = fit['xfit']
-        #rowData['y'] = fit['yfit']
 
         # comment 2022-09-16:
         # include the number of points as:
@@ -193,6 +193,10 @@ outdir = config['outdir'][-1] if indir != 'dir' else indir
 
 indir = os.path.abspath(os.path.expanduser(indir))
 outdir = os.path.abspath(os.path.expanduser(outdir))
+
+if not os.path.isdir(outdir):
+    os.makedirs(outdir)
+# end if outdir does not exit
 
 
 lst = ReadTable(os.path.join(indir, config['lst'][-1] ), sep='  ', keys= ['file','scaler'])
@@ -280,7 +284,7 @@ rep.write('Processing images')
 for i in range(N):
     fn = lst['file'][i]
 
-    fnn = os.path.splitext( os.path.split(fn)[-1])[0]
+    fnn = os.path.splitext(os.path.split(fn)[-1])[0]
     a = read_img(os.path.join(indir,fn))
     scaler = lst['scaler'][i]
 
@@ -324,8 +328,8 @@ for i in range(N):
     display(b)
     print('Summary:')
     keylist = list(ft.keys())
-    keylist.remove('x')
-    keylist.remove('y')
+    #keylist.remove('x')
+    #keylist.remove('y')
 
     headline= '\t'.join(['index'] + keylist)
 
@@ -342,15 +346,12 @@ for i in range(N):
 
         # put the result in the plot and on screen:
         for i in range(Np):
-            pl.plot(ft['y'][i],ft['x'][i], 'r-')
+            pl.plot(ft['yfit'][i],ft['xfit'][i], 'r-')
             pl.text(ft['y0'][i], ft['x0'][i],
                     f'{(i+1):d}',
                     color='red',
                     horizontalalignment='center')
 
-            # txt = "%d\t%f\t%f\t%f\n"
-            #   %(i+1,ft['x0'][i]*scaler,ft['y0'][i]*scaler,
-            #   ft['R'][i]*scaler)
             line = [i+1] + [ft[j][i] * scaler for j in keylist]
             indx = keylist.index('Area') +1 #  compensate for adding the index to the line
             line[indx] *= scaler # needs scaler**2 for area!
