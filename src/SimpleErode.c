@@ -25,11 +25,15 @@ int SimpleErode(int *img, int Ni, int Nj, int bg, int* res)
 {
     int i, j, ii;
 
-    if( img == NULL || res == NULL || Ni < 0 || Nj < 0)
+    if(img == NULL || res == NULL || Ni < 0 || Nj < 0)
     {
         printf("parameter error\n");
         return -1;
     }
+
+    /* loop in dimension 0, then in dimension 1
+     * and create a linearized index in the array
+     */
 
     for(i=0; i<Ni; i++)
     {
@@ -37,8 +41,11 @@ int SimpleErode(int *img, int Ni, int Nj, int bg, int* res)
         {
             ii = Nj*i+j;
 
-            if( *(img + ii) != bg)
+            if(*(img + ii) != bg)
             {
+                /* debug:
+                printf("%d, %d, %d, %d, bg:%d\n", i, j, ii, *(img+ii), bg);
+                */
                 /* check the neighbors if any of them is 0, stop,
                  * else set the pixel in res
                  */

@@ -21,8 +21,8 @@ for f in pth:
     try:
         Flib = ct.load_library(lsoname, f)
     except:
+        # print("failed")
         pass
-        #print("failed")
     else:
         #print("library found in %s" %f)
         break
@@ -542,10 +542,11 @@ def SimpleErode(img, times= 1, WithMin=False, verbose=False):
     #end if
 
     if times < 1:
+        print('number of cycles < 1, return image')
         return img
 
     if WithMin :
-        bkg = img.min()
+        bkg = nu.intc(img.min())
     else:
         bkg = 0
     #end if
@@ -574,7 +575,10 @@ def SimpleErode(img, times= 1, WithMin=False, verbose=False):
         pl.draw()
     #end if
 
-    return res
+    # as of 2025 May there seems to be a crash with int32 return,
+    # but when int is forced it works
+    return res.astype(int)
+
 #end of SimpleErode
 
 def SimpleDilate(img, times= 1, WithMin= False, verbose= False):
@@ -598,7 +602,7 @@ def SimpleDilate(img, times= 1, WithMin= False, verbose= False):
         return img.copy()
 
     if WithMin :
-        bkg = img.min()
+        bkg = nu.intc(img.min())
     else:
         bkg = 0
     #end if
@@ -626,7 +630,7 @@ def SimpleDilate(img, times= 1, WithMin= False, verbose= False):
         pl.draw()
     #end if
 
-    return res
+    return res.astype(int)
 #end of SimpleDilate
 
 def PeakFind(img, threshold=0.667, width=10, verbose=False):

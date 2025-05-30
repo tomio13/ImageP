@@ -76,7 +76,7 @@ def build_src(libname, datafile, pathcore, ccname, CSourceList):
 
         #compiler options:
         objext = '.o'
-        compile_flags=['-Wall','-O3', '-fpic']
+        compile_flags=['-Wall','-O2', '-fpic']
         libdirs = []
 
         #linking is:
