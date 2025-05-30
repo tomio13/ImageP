@@ -4,7 +4,7 @@
     Licence: CC(4)-BY
     Warranty: None
     Date: 2020 - 2024-
-    version: 4.3
+    version: 4.5
 """
 
 import os
@@ -18,15 +18,18 @@ from ImageP import (read_img, bwlabel, bwanalyze, Circle_fit,
                     display, graythresh, SimpleDilate, SimpleErode,
                     SimpleContour, PerimeterImage, GaussDeblur,
                     EdgeDetect)
+from glob import glob
 
 configfile = 'config.txt'
 
 config = {'lst': 'lst.txt', 'N': -1, 'indir':'./', 'outdir':'./Results',\
+            'fmask': '*.tif', 'scaler': 1.0,
           'RGaussBg':30, 'WGaussBg':10, 'RGaussSm':10, 'WGaussSm': 3,\
           'gradient': False, 'quantile': -1, 'threshold': -1,\
           'MinSize': 500, 'MaxSize': 150000, 'gap': 0,
           'Ndilate': 5, 'thickness':12}
 # 'invert': true is an option ot invert an image before processing
+# 'invert Otsu', if set and true, invert the image as < dynamic threshold
 
 #analysis function
 
@@ -37,6 +40,7 @@ def Get_Circles(img,
                 thk= 5,
                 MinSize= 500,
                 MaxSize= 50000,
+                fill = False,
                 gap=0,
                 verbose= True):
     """ find circles in fluorescence images and fit them
@@ -55,6 +59,8 @@ def Get_Circles(img,
                     minimum and maximal number of pixels in patches to be considered
 
         gap:        gap to jump over between patches
+        fill:       take the original thresholded image, and fill up the structures
+                    within, then apply an edge detector
 
         Return:
             a list containing
@@ -73,6 +79,21 @@ def Get_Circles(img,
     # end sorting out threshold
     # to detect the lines, the structure we need
     b = img > th
+
+    if fill:
+        # take each patch identified on the image
+        bw = bwlabel(b)
+        b = nu.zeros(bw.shape, dtype= bool)
+
+        # pick them and fill them up one after the other
+        # overwrite this part in the image if the patch
+        # was closed (thus the resulted spot is not > MaxSize
+        for i in range(1, bw.max()+1):
+            segment = SimpleContour(bw == i)
+            if segment.sum() < MaxSize:
+                b[segment > 0] = True
+        b = PerimeterImage(b)
+
 
     # use dilate/erode to fuse gaps
     if n_dilate > 0:
@@ -127,6 +148,7 @@ def Get_Circles(img,
         ell_p = bwanalyze(d,1, 'p')
         rowData['min_diameter'] = 2.0*ell_p['r'].min()
         rowData['max_diameter'] = 2.0*ell_p['r'].max()
+        # rowData['alpha_range'] = ell_p['alpha'].max() - ell_p['alpha'].min()
 
         # then we fatten that to cover the image points
         d = SimpleDilate(d, thk)
@@ -186,10 +208,10 @@ if __name__=='__main__':
             print('Usage: program config.txt')
             sys.exit(0)
 
-config = ReadConf( configfile, config)
+config = ReadConf( configfile, config, simplify= True)
 
-indir = config['indir'][-1]
-outdir = config['outdir'][-1] if indir != 'dir' else indir
+indir = config['indir']
+outdir = config['outdir'] if indir != 'dir' else indir
 
 indir = os.path.abspath(os.path.expanduser(indir))
 outdir = os.path.abspath(os.path.expanduser(outdir))
@@ -199,9 +221,13 @@ if not os.path.isdir(outdir):
 # end if outdir does not exit
 
 
-lst = ReadTable(os.path.join(indir, config['lst'][-1] ), sep='  ', keys= ['file','scaler'])
+if os.path.isfile(os.path.join(indir, config['lst'])):
+    lst = ReadTable(os.path.join(indir, config['lst'] ), sep='  ', keys= ['file','scaler'])
+else:
+    lst = {}
+    lst['file'] = glob(os.path.join(indir, config['fmask']))
 
-N = int(config['N'][-1])
+N = int(config['N'])
 if not lst:
     print('No data found!')
     sys.exit(0)
@@ -209,7 +235,10 @@ if not lst:
 if N > 0 and N < len(lst['file']):
     # truncate the lines
     lst['file'] = lst['file'][:N]
-    lst['scaler'] = lst['scaler'][:N]
+
+    if 'scaler' in lst:
+        lst['scaler'] = lst['scaler'][:N]
+
 else:
     N = len(lst['file'])
 
@@ -218,25 +247,25 @@ else:
 if not os.path.isdir(outdir):
     os.mkdir(outdir)
 
-Rb = config['RGaussBg'][-1]
-Wb = config['WGaussBg'][-1]
-Rg = config['RGaussSm'][-1]
-Wg = config['WGaussSm'][-1]
+Rb = config['RGaussBg']
+Wb = config['WGaussBg']
+Rg = config['RGaussSm']
+Wg = config['WGaussSm']
 
-gradient = bool( config['gradient'][-1] )
+gradient = bool( config['gradient'])
 #use quantile for threshold:
-q = config['quantile'][-1]
+q = config['quantile']
 
-th = config['threshold'][-1] #if q is not defined
-MinSize = int( config['MinSize'][-1] )
-MaxSize = int( config['MaxSize'][-1] )
-n_dilate = int( config['Ndilate'][-1] ) #edge width + 1 or so
-thk = int(config['thickness'][-1]) #thickness to expect
+th = config['threshold'] #if q is not defined
+MinSize = int( config['MinSize'])
+MaxSize = int( config['MaxSize'])
+n_dilate = int( config['Ndilate']) #edge width + 1 or so
+thk = int(config['thickness']) #thickness to expect
 
-gap = int(config['gap'][-1]) # gap to jump over finding patches
+gap = int(config['gap']) # gap to jump over finding patches
 ########################################################
 # Report parameters:
-rep = Report(outdir, header='Circle analysis for membrane images version 4.1')
+rep = Report(outdir, header='Circle analysis for membrane images version 4.4.1')
 #we detect patches in the inverse image to separate
 #areas of interest
 #Fuse the lines first using dialte  then erode Ndilate times:r,
@@ -244,7 +273,12 @@ rep = Report(outdir, header='Circle analysis for membrane images version 4.1')
 
 rep.write('File path', indir)
 rep.write('Results folder:', outdir)
-rep.write('File list and calibration from:', config['lst'][-1])
+
+if 'scaler' not in lst:
+    rep.write('Filelist from filemask', config['fmask'])
+    rep.write('scaler', config['scaler'])
+else:
+    rep.write('File list and calibration from:', config['lst'])
 
 if Rb >0 :
     rep.write('Gaussian deblur parameters')
@@ -286,7 +320,7 @@ for i in range(N):
 
     fnn = os.path.splitext(os.path.split(fn)[-1])[0]
     a = read_img(os.path.join(indir,fn))
-    scaler = lst['scaler'][i]
+    scaler = lst['scaler'][i] if 'scaler' in lst else config['scaler']
 
     if a is None:
         rep.write("image", fnn, "not found", color='red')
@@ -315,8 +349,13 @@ for i in range(N):
     if q > 0 and q < 1:
         th = nu.quantile(b, q)
 
+    if 'fill circles' in config and config['fill circles']:
+        fill_circles= True
+    else:
+        fill_circles= False
+
     #now, get the circles detected / fitted / collected; see above
-    ft = Get_Circles(b, th, n_dilate, thk, MinSize, MaxSize)
+    ft = Get_Circles(b, th, n_dilate, thk, MinSize, MaxSize, fill= fill_circles)
     if not ft:
         rep.write('Nothing found!', color='red')
         continue
@@ -328,6 +367,8 @@ for i in range(N):
     display(b)
     print('Summary:')
     keylist = list(ft.keys())
+    keylist.remove('xfit')
+    keylist.remove('yfit')
     #keylist.remove('x')
     #keylist.remove('y')
 
@@ -370,6 +411,5 @@ for i in range(N):
     fout = f'{fnn}-summary.png'
     pl.savefig(os.path.join( outdir, fout), dpi=200, bbox_inches='tight', pad_inches=0)
     rep.write('Dumped summary image to:', fout)
-
 
 #end for file list

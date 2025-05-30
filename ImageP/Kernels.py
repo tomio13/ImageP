@@ -139,7 +139,7 @@ def RotatingGaussKernel(sx, sy, angle=0, shape=[-1,-1], deriv=0):
         or the second derivative (Laplace filtered kernel).
         The main kernel is defined using the standard deviations as:
 
-         1/(2 \pi s_x s_y) exp( - x^2/(2 s_x^2) - y^2/(2 s_y^2))
+         1/(2 \\pi s_x s_y) exp( - x^2/(2 s_x^2) - y^2/(2 s_y^2))
 
         Parameters:
             sx, sy: sigma in the i and j direction before rotation

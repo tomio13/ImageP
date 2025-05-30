@@ -972,3 +972,13 @@ cl pch.cpp *.c -Ox -MD -link -DLL -nologo -INCREMENTAL:NO -def:.\libCsources.def
 2024-01-05:
     Pack the get_nodes and Skel functions into the Convolve.py file, since they better
     belong there.
+
+2025-05-30:
+    I have not updated this file for a while, all changes were running in the github.
+
+    Today SimpleErode and SimpleDilate were causing segmentation faults I cannot understand.
+    Digging in indicated that some numpy code is crashing when compiled using the newest
+    gcc (15.1) compiler. I have forced the original -O3 optimization down to -O2, it helped
+    somewhat. The other point was to force the return image to be int type and not remaining
+    c-type int. There may be some changes in the numpy code as well I could / did not follow.
+
