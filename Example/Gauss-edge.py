@@ -27,7 +27,9 @@ config = {'dir': './', 'outdir': './Results', 'ext':'.png', 'dpi': 150, \
         'RGaussSm': -10, "WGaussSm": -0.75, \
         # enable a size filter if non-negative
         'MinSize': -1, 'MaxSize': -1,
-        'gamma': -1,\
+        # gamma is a dynamic range compressor applied after background
+        # subtraction and edge detection
+        'gamma': -1,
         'deriv': 0, 'N':-1,\
         'Langle': 15, 'Wangle': 0.75, 'Rangle':25 ,\
         'masked':False, 'mask':"mask ", "invertmask": True, 'maskerode':10,\
@@ -36,7 +38,8 @@ config = {'dir': './', 'outdir': './Results', 'ext':'.png', 'dpi': 150, \
         'UseStructure': False, 'StructureScaler': 5,
         'CutEdge': False, 'EdgeWidth': -1}
 #alternative switches:
-# CutNegative cut the negative pixels in using 2nd derivative ridge detector
+# CutNegative cut the negative pixels in edge detection
+# for background correction, negative pixels are always cut
 # Blob removal: RemoveBlob, MinBlob and MaxBlob: k/ra > 3*pi and k/ra < 6*pi
 # Save arrays in binary numpy format compressed: dump = True
 # SoftThreshold: use the minimum of relative mean or Otsu's threshold
@@ -294,18 +297,26 @@ alpha_max = 180.0
 dalpha = alpha_max - alpha_min #\Delta alpha, range of angles
 alpha = linspace(alpha_min, alpha_max, Nangles, endpoint=False)
 
-#distribution width:
-Rg = []
-avg_angle= []
-t_Rg = arange(len(lst))
-fwhm_list = []
-quantile_list = []
+# results table
+res = []
+# the table header
+res_keys = []
 
 for fn in lst[0:N]:
+    # row of results:
+    res_row= {}
+
     img = read_img(fn)
     fn = os.path.split(fn)[1]
     ffn = os.path.splitext(fn)[0]
+
+    if img is None:
+        rep.write('Image', fn, 'not found!', color='red')
+        continue
+
     rep.write("Read image from file:", fn, color='cyan')
+
+    res_row['file'] = ffn
 
     #Should we invert the image around its average background?
     #we talk about bright-field images here
@@ -396,49 +407,43 @@ for fn in lst[0:N]:
     #   3. with or without Gauss deblurr we need derivative filter
 
     if RGaussBg > 0 and WGaussBg > 0:
-        #print("Gauss deblurr background: R: %d, W: %.3f, smoothening radius %d, width %.3f" \
-         #       %(RGaussBg, WGaussBg, RGaussSm, WGaussSm))
-        img = GaussDeblurr(img, RGaussBg, WGaussBg,RGaussSm, WGaussSm, KillZero=True)
+        img = GaussDeblurr(img, RGaussBg, WGaussBg, RGaussSm, WGaussSm, KillZero=True)
 
-    #we can smoothen the image to enhance features:
-    #this can be ignored, then the filter picks up all possible noises
+    # we can smoothen the image to enhance features:
+    # this can be ignored, then the filter picks up all possible noises
     if RGaussSm > 0 and WGaussSm > 0:
         #print("Smoothening with a Gaussian, window: %d, width: %.3f" %(RGaussSm, WGaussSm))
         if deriv == 1:
             rep.write("Calculating derivatives");
             img= EdgeDetect(img, R= RGaussSm, w= WGaussSm, \
                     KillZero= ('CutNegative' in config))
-
-        elif deriv > 0 or (RGaussBg <= 0 or WGaussBg <= 0):
-            # typically deriv == 2:
-            rep.write("Calculating Gauss smoothing with derivative set to order", deriv)
-
-            # gk = GaussKernel(RGaussSm, WGaussSm, OneD= True, deriv= deriv)
-            # img = ConvFilter1D(img,gk)
-            img = EdgeDetect(img, RGaussSm, WGaussSm, KillZero= True)
-
-        # use gamma for any case
-        if gamma > 0:
-            rep.write('apply gamma:', gamma)
-            img = Compress(img, gamma, rel= True)
-
+        else:
+            # smoothing without background correction
+            gk = GaussKernel(RGaussSm, WGaussSm, norm= True, OneD= True)
+            img = ConvFilter1D(img, gk)
         #end sorting out which filter
     #end if smoothing
 
+    # use gamma for any case
+    if gamma > 0:
+            rep.write('apply gamma:', gamma)
+            img = Compress(img, gamma, rel= True)
+
+
 
     ###############  here starts the orientation analysis
-    #create filtered stack:
+    # create filtered stack:
     c = zeros([Nangles, img.shape[0],img.shape[1]])
 
-    #run through the angle list:
+    # run through the angle list:
     for i in range(Nangles):
         print("calculating: %d alpha: %.1f" %(i, alpha[i]))
         gkr = -RotatingGaussKernel(Langle,Wangle, alpha[i], \
                                         shape=[2*Rangle+1,2*Rangle+1],deriv=2)
-#        gkr = gkr / sqrt((gkr*gkr).sum())
 
+        # this is the slow part, a 2D convolution filter
         c[i,:,:] = ConvFilter(img, gkr)
-    #end for
+    # end for
 
     if CutEdge:
         print('Cutting the edges')
@@ -448,36 +453,34 @@ for fn in lst[0:N]:
             maskimg = maskimg[EdgeWidth:-EdgeWidth, EdgeWidth:-EdgeWidth]
     #end cutting the edges
 
-    #analyze the resulted stack:
-    #Easy to find the maximum
-    #b = c.max(axis=0)
+    # analyze the resulted stack:
+    # Easy to find the maximum but avoid undefined pixels ...
     b = nanmax(c, axis=0)
-    #b = b*(b > 0)
-    #instead, do inplace erasure, we need sparing some memory
+    # erase negative pixels...
+    # do inplace erasure, we need sparing some memory
     b[b <= 0] = 0
     if masked and maskimg.sum() > 0:
-        b[ maskimg == 0 ] = 0
+        b[maskimg == 0] = 0
 
-    #first we find the maximum angles, and free up 'c'!
+    # first we find the maximum angles, and free up 'c'!
     print("Generating index image")
-    #generate angle image:
+    # generate angle image:
     aimg = zeros(b.shape)
-    #take the coordinates, where the 3D c-image is equal to its maximum b
-    #only for nonzero b values (the ones kept after filtering:
+    # take the coordinates, where the 3D c-image is equal to its maximum b
+    # only for nonzero c values (the ones kept after filtering)
     indx = ((c == b) * (c > 0) ).nonzero()
 
-    #the first dimension holds the angle value, 1,2 are the X,Y projection:
+    # the first dimension holds the angle index value, 1,2 are the X,Y projection:
     aimg[indx[1],indx[2]] = indx[0]*dalpha/Nangles + alpha_min
 
-    #clean some memory:
+    # clean some memory:
     del(c)
 
     # generate threshold
     print("Gray thresholding the orientation intensities")
     tt = time()
-    bb = b[b > 0]
-    if bb.sum() == 0:
-        #this image got empty!
+    if b[b>0].sum() == 0:
+        # this image is empty!
         rep.write('Empty result image!:', fn)
         continue
     #end if empty intensity image
@@ -500,7 +503,7 @@ for fn in lst[0:N]:
 
 
             #kill pixels, not the mask:
-            b[ mask ] = 0
+            b[mask] = 0
             del(d)
         else:
             #we want to find roundish blobs...
@@ -522,8 +525,8 @@ for fn in lst[0:N]:
 
     # the soft threshold uses the mean,
     # the conservative one Otsu's method:
-    th = min(graythresh(bb),\
-                bb.mean()/bb.max()) if SoftThreshold else graythresh(bb)
+    th = min(graythresh(b),\
+                b.mean()/b.max()) if SoftThreshold else graythresh(b)
     #end generate threshold
 
     # now, we want to filter the results for noise / other problems
@@ -606,10 +609,9 @@ for fn in lst[0:N]:
     ais = aimg[bindx]   #the rest is set to 0 and meaningless.
 
     #store some information 1:
-    avg_angle.append(ais.mean())
+    res_row['Average angle (deg.)'] = ais.mean()
     #here the histogram can be over broad, because of wrapping around
     #angles... std() we derive after reorientation
-    #Rg.append( ais.std() )
 
 
     h = hist(ais, bins = bins)
@@ -683,13 +685,15 @@ for fn in lst[0:N]:
     #append the radius of gyration = standard deviation:
     #ais got recentered since...
     aistd = ais.std()
-    Rg.append( aistd )
+    #distribution width:
+    res_row['Standard dev. (deg.)'] = aistd
+
     #store the FWHM of the histogram:
     aisfwhm = FWHM(h2['midpoints'],h2['dist'])
-    fwhm_list.append( aisfwhm )
+    res_row['FWHM (deg.)'] = aisfwhm
     #we can also use quantiles to analyze width
     quants = quantile( ais, asarray((0.5- Qwidth/2, 0.5+Qwidth/2)))
-    quantile_list.append( quants[1]-quants[0])
+    res_row['Quantile (deg.)'] = quants[1]-quants[0]
 
     rep.write("Distribution widths are std:", aistd, "\tFWHM:", aisfwhm, '\tQuant:', quants[1]-quants[0])
 
@@ -698,16 +702,20 @@ for fn in lst[0:N]:
         fout = os.path.join(outdir, f"{ffn}-numpy-dump.npz")
         savez_compressed(fout, alpha= aimg, maximg= b, indx= bindx )
 
+    if not res_keys:
+        res_keys= list(res_row.keys())
+
+    res.append(list(res_row.values()))
 #end for...
 
 #dump summary about all histograms processed here:
 #Rg = asarray(Rg)
 #avg_angle = asarray(avg_angle)
 
-SaveData(["index","Average direction (deg)", "Standard dev. (deg)", "FWHM (deg)", 'Quantile_diff (deg)'], \
-        zip(t_Rg,avg_angle, Rg, fwhm_list, quantile_list),\
-        os.path.join(outdir, "Angle-widths.txt"), \
-        "Direction and standard deviation of angle histograms")
+SaveData(res_keys,
+         res,
+         os.path.join(outdir, "Angle-widths.txt"), \
+         "Direction and standard deviation of angle histograms")
 rep.write("Done, results are all saved")
 rep.close()
 
