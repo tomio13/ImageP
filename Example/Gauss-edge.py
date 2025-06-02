@@ -413,8 +413,9 @@ for fn in lst[0:N]:
             # typically deriv == 2:
             rep.write("Calculating Gauss smoothing with derivative set to order", deriv)
 
-            gk = GaussKernel(RGaussSm, WGaussSm, OneD= True, deriv= deriv)
-            img = ConvFilter1D(img,gk)
+            # gk = GaussKernel(RGaussSm, WGaussSm, OneD= True, deriv= deriv)
+            # img = ConvFilter1D(img,gk)
+            img = EdgeDetect(img, RGaussSm, WGaussSm, KillZero= True)
 
         # use gamma for any case
         if gamma > 0:
