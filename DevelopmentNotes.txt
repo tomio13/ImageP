@@ -982,3 +982,8 @@ cl pch.cpp *.c -Ox -MD -link -DLL -nologo -INCREMENTAL:NO -def:.\libCsources.def
     somewhat. The other point was to force the return image to be int type and not remaining
     c-type int. There may be some changes in the numpy code as well I could / did not follow.
 
+2025-06-17:
+    matplotlib.pyplot.imshow() is complaining about the composite images,
+    because they are float 0 - 255. It requires int or 0 - 1 float.
+    I have added the normalization for now because it is generic (not forcing
+    an already float image back to integer losing data).

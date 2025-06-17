@@ -125,6 +125,10 @@ def display(image, fN = 1, colorbar=False, col='jet',\
         plt.plot(image,'-o');
 
     elif nd== 2 or (nd == 3 and image.shape[2]==3):
+        if nd == 3:
+            # for RGB either 0-1 float or 0-255 integer
+            image  = image/image.max()
+
         Img = plt.imshow(image, origin= origin, \
                 cmap = cl,\
                 interpolation=None,
