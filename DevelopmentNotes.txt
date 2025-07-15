@@ -987,3 +987,8 @@ cl pch.cpp *.c -Ox -MD -link -DLL -nologo -INCREMENTAL:NO -def:.\libCsources.def
     because they are float 0 - 255. It requires int or 0 - 1 float.
     I have added the normalization for now because it is generic (not forcing
     an already float image back to integer losing data).
+
+2025-07-05:
+    Update GaussEdge.py to write the results table line-by-line, making it more dynamic,
+    allow resuming operations after stopping for large data sets.
+    Utilize the rewritten append functionality of SaveData in the BatchAnalyzer.
