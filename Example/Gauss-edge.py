@@ -327,7 +327,7 @@ for fn in lst[0:N]:
         img = img - img.min()
 
     if masked:
-        mfn = "%s%s" %(fnmask, fn)
+        mfn = f"{fnmask}{fn}"
         #not checking here intentionally, to crash if mask is not
         #provided properly...
         rep.write("reading mask:", mfn)
@@ -346,7 +346,7 @@ for fn in lst[0:N]:
         else:
             maskimg = maskimg - maskimg.min()
 
-        #it has to be a bool, we take the nonzero values:
+        # the used masl has to be a bool, we take the nonzero values:
         if maskth < 0:
             usemaskth = graythresh(maskimg)
         else:
@@ -360,7 +360,7 @@ for fn in lst[0:N]:
 
         #first kill the image pixels to something of moderate value:
         if maskimg.sum() > 0:
-            img[ maskimg == 0 ] = img.mean()
+            img[maskimg == 0] = img.mean()
             #grow the mask to kill the kernel effects:
             for erodi in range(maskerode):  maskimg = SimpleErode(maskimg)
         else:
@@ -651,6 +651,23 @@ for fn in lst[0:N]:
     bins2 = append(alpha2, alpha2.max() + 2.0*dalpha2) - dalpha2
 
     h2 = hist(ais, bins=bins2)
+    # alternatively, use the maximum:
+    ind_max = (h2['dist'] == h2['dist'].max()).nonzero()[0][0]
+    i0 = max(ind_max-2, 0)
+    i1 = min(ind_max+2, len(h['midpoints']))
+    # this is a refined 'average'
+    # since we have the maximum around 0 and the distribution recentered, this sum
+    # should work all right
+    ais_max = (h2['midpoints'][i0:i1]*h2['dist'][i0:i1]).sum()/h2['dist'][i0:i1].sum() + central
+    # rotate it back to the original direction
+    # if somehow it gets out of range, correct it:
+    if ais_max > 90:
+        ais_max -= 180
+
+    elif ais_max < -90:
+        ais_max += 180
+
+    res_row['Angle max (deg.)'] = ais_max
 
 #    h['midpoints'] = h['midpoints'] - central
 #    h['pockets'] = h['pockets'] - central
@@ -705,17 +722,19 @@ for fn in lst[0:N]:
     if not res_keys:
         res_keys= list(res_row.keys())
 
-    res.append(list(res_row.values()))
+    # res.append(list(res_row.values()))
+
+    SaveData(res_keys,
+         [list(res_row.values())],
+         os.path.join(outdir, "Angle-widths.txt"),
+         "Direction and standard deviation of angle histograms",
+         append = True)
 #end for...
 
 #dump summary about all histograms processed here:
 #Rg = asarray(Rg)
 #avg_angle = asarray(avg_angle)
 
-SaveData(res_keys,
-         res,
-         os.path.join(outdir, "Angle-widths.txt"), \
-         "Direction and standard deviation of angle histograms")
 rep.write("Done, results are all saved")
 rep.close()
 
