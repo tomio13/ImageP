@@ -318,12 +318,12 @@ for fn in lst[0:N]:
 
     res_row['file'] = ffn
 
-    #Should we invert the image around its average background?
-    #we talk about bright-field images here
+    # Should we invert the image around its average background?
+    # we talk about bright-field images here
     if Invert:
         img = img.max() - img
     else:
-        #background correction:
+        # simplest background correction:
         img = img - img.min()
 
     if masked:
@@ -352,21 +352,22 @@ for fn in lst[0:N]:
         else:
             usemaskth = maskth
 
-        #our mask is 1 or True where we keep the pixels!
+        # our mask is 1 or True where we keep the pixels!
         if invertmask:
             maskimg = maskimg > usemaskth*maskimg.max()
         else:
             maskimg = maskimg < usemaskth*maskimg.max()
 
-        #first kill the image pixels to something of moderate value:
+        # first kill the image pixels to something of moderate value:
         if maskimg.sum() > 0:
             img[maskimg == 0] = img.mean()
-            #grow the mask to kill the kernel effects:
-            for erodi in range(maskerode):  maskimg = SimpleErode(maskimg)
+            # grow the mask to kill the kernel effects:
+            # erode maskerode times
+            # it shall be used in the max-intensity image
+            maskimg = SimpleErode(maskimg, maskerode)
         else:
             rep.write('Empty mask image, ignoring mask')
-
-
+    # end preparing mask
 
 
     ################## Background subtratction and filters:
@@ -396,17 +397,17 @@ for fn in lst[0:N]:
         #print("Rolling ball background with radius: %d" %Nroll)
         img = img - RollingBall(img, Nroll, reduce= Nreduce)
         img[img <0 ] = 0
+    # end rolling ball backgroun
 
-    #end if Nroll makes sense -> Nroll < 0 turns this off
+    # If we want to remove small size noise, it is a good place here
 
-    #If we want to remove small size noise, it is a good place here
-
-    #we have three situations here:
+    # we have three situations here:
     #   1. Gauss deblur
     #   2. no Gauss deblurr, but smoothing
     #   3. with or without Gauss deblurr we need derivative filter
 
     if RGaussBg > 0 and WGaussBg > 0:
+        # GaussDeblurr does nothing if the background filter is invalid
         img = GaussDeblurr(img, RGaussBg, WGaussBg, RGaussSm, WGaussSm, KillZero=True)
 
     # we can smoothen the image to enhance features:
@@ -417,7 +418,11 @@ for fn in lst[0:N]:
             rep.write("Calculating derivatives");
             img= EdgeDetect(img, R= RGaussSm, w= WGaussSm, \
                     KillZero= ('CutNegative' in config))
-        else:
+
+        # the case where RGaussSm and WGaussSm are defined and no gradient is
+        # needed, we have in GaussDeblur already
+        # This would be a double smoothing...
+        elif RGaussBg <= 0 or WGaussBg <= 0:
             # smoothing without background correction
             gk = GaussKernel(RGaussSm, WGaussSm, norm= True, OneD= True)
             img = ConvFilter1D(img, gk)
@@ -426,8 +431,8 @@ for fn in lst[0:N]:
 
     # use gamma for any case
     if gamma > 0:
-            rep.write('apply gamma:', gamma)
-            img = Compress(img, gamma, rel= True)
+        rep.write('apply gamma:', gamma)
+        img = Compress(img, gamma, rel= True)
 
 
 
@@ -458,7 +463,7 @@ for fn in lst[0:N]:
     b = nanmax(c, axis=0)
     # erase negative pixels...
     # do inplace erasure, we need sparing some memory
-    b[b <= 0] = 0
+    b[b < 0] = 0
     if masked and maskimg.sum() > 0:
         b[maskimg == 0] = 0
 

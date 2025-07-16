@@ -121,7 +121,7 @@ def ConvFilter(image1, image2, MinPad=True, Smooth=False,\
     Ndiff_r = Npad_r + int( r2 / 2)
 
     #build the padded image:
-    pad_img = zeros( (r_end, c_end))
+    pad_img = zeros((r_end, c_end))
     #the rims: we can pad like this, but we add artefacts!
     #for i in range(r1):
     #    pad_img[i, :Npad_c] = image1[i,0]
@@ -131,7 +131,7 @@ def ConvFilter(image1, image2, MinPad=True, Smooth=False,\
     #    pad_img[Npad_r+r1:, i] = image1[-1, i]
     #end filling the edges
     #fill the middle:
-    pad_img[ Npad_r: Npad_r+r1, Npad_c:Npad_c+c1] = image1
+    pad_img[Npad_r: Npad_r+r1, Npad_c:Npad_c+c1] = image1
 
     #To have a good result, we have to pad up the images:
     #These FFT functions take care of the normalization as well!
@@ -150,6 +150,7 @@ def ConvFilter(image1, image2, MinPad=True, Smooth=False,\
 
     return ((iFft(fftimage))[Ndiff_r:Ndiff_r+r1, Ndiff_c:Ndiff_c+c1]).real
 #end of ConvFilter
+
 
 ##############
 def ConvFilter1D(image, kernel, MinPad=True, kernel_y=None):
@@ -362,6 +363,7 @@ def GaussDeblurr(img, r1=50, w1=25, r2=5, w2=2,\
     """
     return GaussDeblur(img, r1, w1, r2, w2, KillZero, verbose)
 # end of GaussDeblurr
+
 
 def GaussDeblur(img, r1=50, w1=25, r2=5, w2=2,\
         KillZero=False, verbose =False):
