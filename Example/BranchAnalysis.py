@@ -225,6 +225,7 @@ for fn in lst:
     # bimg = img2 > quantile(img2, 0.9)
     if 'q' in config and config['q'] > 0 and config['q'] < 1:
         th = quantile(img2, config['q'])
+
     elif config['threshold'] < 0:
         th = graythresh(img2)
         rep.write('Automatic threshold', th)

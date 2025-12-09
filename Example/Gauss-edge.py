@@ -306,6 +306,7 @@ for fn in lst[0:N]:
     # row of results:
     res_row= {}
 
+    # get the image as a gray scale intensity image (I16 by default)
     img = read_img(fn)
     fn = os.path.split(fn)[1]
     ffn = os.path.splitext(fn)[0]
@@ -328,8 +329,8 @@ for fn in lst[0:N]:
 
     if masked:
         mfn = f"{fnmask}{fn}"
-        #not checking here intentionally, to crash if mask is not
-        #provided properly...
+        # not checking here intentionally, to crash if mask is not
+        # provided properly...
         rep.write("reading mask:", mfn)
 
         maskimg = read_img(os.path.join(indir, mfn))
@@ -397,7 +398,7 @@ for fn in lst[0:N]:
         #print("Rolling ball background with radius: %d" %Nroll)
         img = img - RollingBall(img, Nroll, reduce= Nreduce)
         img[img <0 ] = 0
-    # end rolling ball backgroun
+    # end rolling ball background
 
     # If we want to remove small size noise, it is a good place here
 
@@ -429,15 +430,15 @@ for fn in lst[0:N]:
         #end sorting out which filter
     #end if smoothing
 
+    if CutEdge:
+        print('Cutting the edges')
+        img = img[EdgeWidth:-EdgeWidth, EdgeWidth:-EdgeWidth]
+
+        if masked:
+            maskimg = maskimg[EdgeWidth:-EdgeWidth, EdgeWidth:-EdgeWidth]
+    #end cutting the edges
+
     # use gamma for any case
-    if gamma > 0:
-        rep.write('apply gamma:', gamma)
-        img = Compress(img, gamma, rel= True)
-
-
-
-    ###############  here starts the orientation analysis
-    # create filtered stack:
     c = zeros([Nangles, img.shape[0],img.shape[1]])
 
     # run through the angle list:
@@ -449,14 +450,6 @@ for fn in lst[0:N]:
         # this is the slow part, a 2D convolution filter
         c[i,:,:] = ConvFilter(img, gkr)
     # end for
-
-    if CutEdge:
-        print('Cutting the edges')
-        c = c[:,EdgeWidth:-EdgeWidth, EdgeWidth:-EdgeWidth]
-
-        if masked:
-            maskimg = maskimg[EdgeWidth:-EdgeWidth, EdgeWidth:-EdgeWidth]
-    #end cutting the edges
 
     # analyze the resulted stack:
     # Easy to find the maximum but avoid undefined pixels ...
@@ -558,24 +551,23 @@ for fn in lst[0:N]:
     print("it took: %.3f seconds" %(time()-tt))
     rep.write("Selected intensity threshold is", th, color='green')
 
-    #Output filtered angle and intensity images
-    #pl.figure(1)
+    # Output filtered angle and intensity images
+    # pl.figure(1)
+
     pl.clf();
     pl.gray();
-    if masked:
-        pl.imshow(img)
-    else:
-        pl.imshow(img)
+    # img is still the background corrected image after compression
+    pl.imshow(img)
     pl.axis('off')
     pl.title("Filtered image %s" %fn)
     fout = os.path.join(outdir, f"{ffn}-filtered-image{ext}")
     pl.savefig(fout, dpi= dpi, bbox_inches="tight", pad_inches=0)
 
 
-    #filter the angle image to the meaningful amplitudes only:
+    # filter the angle image to the meaningful amplitudes only:
     aimg = aimg*bindx
-    #because of this point, the masking is incorporated in the meaningful
-    #alpha values, thus no worries...
+    # because of this point, the masking is incorporated in the meaningful
+    # alpha values, thus no worries...
 
     ####################
     # More output:
