@@ -992,3 +992,6 @@ cl pch.cpp *.c -Ox -MD -link -DLL -nologo -INCREMENTAL:NO -def:.\libCsources.def
     Update GaussEdge.py to write the results table line-by-line, making it more dynamic,
     allow resuming operations after stopping for large data sets.
     Utilize the rewritten append functionality of SaveData in the BatchAnalyzer.
+
+2026-02-04:
+I have some issues with image orientation, in some cases I get the image upside down, and I do not know why. The origin is 'upper' per default. Since the image mode parameter was not used in display, now I switch back to pass origin to it with 'upper' as default.

@@ -59,7 +59,7 @@ def composite(img1, img2= None, img3= None, norm=True):
 #simplify life:
 def display(image, fN = 1, colorbar=False, col='jet',\
         title="",\
-        imgmode=True, GUI=False, NewFig=False, fname="", dpi=150,
+        origin= 'upper', GUI=False, NewFig=False, fname="", dpi=150,
         vmin= None, vmax= None, alpha= None):
 
     """ Simplified envelop to matplotlib.pyplot.imshow with
@@ -81,7 +81,8 @@ def display(image, fN = 1, colorbar=False, col='jet',\
 
         Compatibility parmeters: these are provided because of the previous
         version of Image
-            imgmode:    use 0,0 in the left bottom corner (bool, True)
+            origin:     pass the origin parameter. For overplotting lower may
+                        be better suitable
             GUI:        when done, call the pl.show() GUI loop. This should
                         be the last thing in a program (see matplotlib)
             NewFig:     override fN, and create a new figure
@@ -95,9 +96,8 @@ def display(image, fN = 1, colorbar=False, col='jet',\
     """
 
     fN = fN if fN > 1 else 1
-    # origin = 'lower' if imgmode else 'upper'
     # as of 2021 upper provides proper image orientation
-    origin = 'upper'
+    # origin = 'upper'
 
     if NewFig:
         fig = pl.figure()
