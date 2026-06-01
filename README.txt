@@ -29,6 +29,10 @@ New way:
 Install (e.g. ImageP...whl)
     pip install dist/ImageP....whl
 
+    if you wanted to add the dll, use:
+    pip show ImageP
+    then copy the llibCsources.dll into the indicated folder.
+
 Dependencies:
     numpy, matplotlib, image (PIL)
 
