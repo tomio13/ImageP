@@ -17,7 +17,7 @@
     Author: Tomio
     License: Creative Commons v. 4.0
     Warranty: None
-    Date: 2017 - 2024
+    Date: 2017 - 2026
 """
 # you may want to go sure no extra ouput is made:
 #from matplotlib import use
@@ -332,7 +332,7 @@ for fn in lst:
     else:
         img = img - img.min()
 
-    if gamma != 1 and gamma != 0:
+    if gamma != 1 and gamma > 0:
         rep.write('applying power', gamma, 'to the image')
         #img = img**gamma
         img = Compress(img, gamma, rel=True)
@@ -427,6 +427,7 @@ for fn in lst:
     rep.write('Outgrowth radius:', radius, color='red')
     row_res['circ_normalized_thresholded_radius'] = radius
     row_res['histogram_max_distance'] = h['midpoints'].max()
+    # where the histogram falls under the threhold, typically 5% of the maximum of the histogram
     row_res['rel_abs_radius'] = dist_rel_distance(h, hist_threshold)
 
     fn_out = os.path.splitext(os.path.split(fn)[-1])[0]

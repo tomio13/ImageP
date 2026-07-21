@@ -3,7 +3,7 @@
 
     Author:     T. Haraszti
     Email:      haraszti@dwi.rwth-aachen.de
-    Date:       2016-06- 2021
+    Date:       2016-06- 2026
     Licence:    CC(4)-BY
 
 """
@@ -438,7 +438,14 @@ for fn in lst[0:N]:
             maskimg = maskimg[EdgeWidth:-EdgeWidth, EdgeWidth:-EdgeWidth]
     #end cutting the edges
 
-    # use gamma for any case
+    # use gamma
+    # it is a good question to use this before background correction or after
+    # now it is set for after all corrections
+    # use the rel= True setting
+    # if gamma <0 it is difficult what would happen, it would convert intensities
+    # to 1/intensity... here, we consider gamma not set if it was negative
+    if gamma > 0:
+        img = Compress(img, gamma, True, False)
     c = zeros([Nangles, img.shape[0],img.shape[1]])
 
     # run through the angle list:
