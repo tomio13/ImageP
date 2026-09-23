@@ -33,7 +33,7 @@ config = {'dir': './', 'outdir': 'Results', 'fmask':'*.tif', 'dpi': 150,
 def clean_skeleton(skelimg, node_img, MinSize= 5):
     """ walk through the skeleton, and use points where multiple
         branches converge.
-        Assume a skeleton shold not contain short side lines here
+        Assume a skeleton should not contain short side lines here
         and there, which are often a side effect of skeletoinzation.
         Try eliminating segments which are just sticking out or
         not connected to the rest at all.
