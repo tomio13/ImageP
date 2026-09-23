@@ -8,7 +8,8 @@
 
 """
 from ImageP import *
-from numpy import linspace, zeros, sqrt, nanmax, append, pi, arange, asarray, abs
+from numpy import (linspace, zeros, sqrt, nanmax,
+                   append, pi, arange, asarray, abs, cos, sin)
 from numpy import savez_compressed, quantile
 from matplotlib import pyplot as pl
 #do not even bother plotting:
@@ -617,7 +618,6 @@ for fn in lst[0:N]:
     #here the histogram can be over broad, because of wrapping around
     #angles... std() we derive after reorientation
 
-
     h = hist(ais, bins = bins)
 
     pl.figure(4)
@@ -703,8 +703,8 @@ for fn in lst[0:N]:
     SaveData(h2.keys(), zip(*h2.values()), fout, \
             "Rotated angle histogram")
 
-    #append the radius of gyration = standard deviation:
-    #ais got recentered since...
+    # append the radius of gyration = standard deviation:
+    # ais got recentered since...
     aistd = ais.std()
     #distribution width:
     res_row['Standard dev. (deg.)'] = aistd
@@ -715,6 +715,31 @@ for fn in lst[0:N]:
     #we can also use quantiles to analyze width
     quants = quantile( ais, asarray((0.5- Qwidth/2, 0.5+Qwidth/2)))
     res_row['Quantile (deg.)'] = quants[1]-quants[0]
+
+    # As a last measure we can define a persistence
+    # we can use the original histogram, but I am not sure how the rotation affected the result
+    # the problem comes from the fact we do not have a full vector direction, but only a half circle
+    # Thus such rotation would affect the result. The original setup is at least in Y symmetric.
+    # This restriction also meanns that 0 should be not reachable...
+    # For the limited angle range we should have values between 2/pi = 0.6366198 and 1.
+    avg_denom = h['dist'].sum()
+    # set angles to radians
+    alpha_rad = pi*alpha/180.0
+    cos_avg = (h['dist']*cos(alpha_rad)).sum()/avg_denom
+    sin_avg = (h['dist']*sin(alpha_rad)).sum()/avg_denom
+    persistence = sqrt(cos_avg**2 + sin_avg**2)
+    rep.write('pesistence [0-1]:', persistence, color='cyan')
+    res_row['Persistence']= persistence
+
+    # alternatively we can borrow the order parameter for liquid crystals defined as
+    # average of the second Legendre polynomial
+    # see: https://en.wikipedia.org/wiki/Liquid_crystal#Order_parameter
+    # S = average(0.5*(3*cos(theta)**2 - 1))
+    # this should have a value around 0.6 - 0.8 for nematic phase and disappear for isotropic phase
+    # S = 1 for perfect order
+    S = (h['dist']*0.5*(3.0*cos(alpha_rad)**2 -1.0)).sum()/avg_denom
+    rep.write('Order parameter S:', S)
+    res_row['Order parameter (S)'] = S
 
     rep.write("Distribution widths are std:", aistd, "\tFWHM:", aisfwhm, '\tQuant:', quants[1]-quants[0])
 
