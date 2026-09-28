@@ -995,3 +995,8 @@ cl pch.cpp *.c -Ox -MD -link -DLL -nologo -INCREMENTAL:NO -def:.\libCsources.def
 
 2026-02-04:
 I have some issues with image orientation, in some cases I get the image upside down, and I do not know why. The origin is 'upper' per default. Since the image mode parameter was not used in display, now I switch back to pass origin to it with 'upper' as default.
+
+2026-09-28:
+Now, I have added circular statistics based on the wikipedia page at:
+https://en.wikipedia.org/wiki/Directional_statistics#Dispersion
+For Persistence, we have to expect that the minimal value is 2/pi, because of the half circle analyzed. Persistence is also the angular average. Persistence is comparing the end to end distance to the contour length in an N unit step random walk.
