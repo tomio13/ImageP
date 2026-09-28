@@ -9,7 +9,8 @@
 """
 from ImageP import *
 from numpy import (linspace, zeros, sqrt, nanmax,
-                   append, pi, arange, asarray, abs, cos, sin)
+                   append, pi, arange, asarray, abs, cos, sin,
+                   sqrt, log)
 from numpy import savez_compressed, quantile
 from matplotlib import pyplot as pl
 #do not even bother plotting:
@@ -730,6 +731,17 @@ for fn in lst[0:N]:
     persistence = sqrt(cos_avg**2 + sin_avg**2)
     rep.write('pesistence [0-1]:', persistence, color='cyan')
     res_row['Persistence']= persistence
+    cos_avg = (h['dist']*cos(2*alpha_rad)).sum()/avg_denom
+    sin_avg = (h['dist']*sin(2*alpha_rad)).sum()/avg_denom
+    # the second angular momentum length is
+    R_bar2 = sqrt(cos_avg**2 + sin_avg**2)
+    rep.write('Second angular momentum R2:', R_bar2)
+    res_row['R_bar2'] = R_bar2
+    res_row['Variance'] = 1 - persistence
+    res_row['Standard dev.'] = sqrt(-2.0*log(persistence))
+    res_row['dispersion'] = (1 - R_bar2)/(2* persistence**2)
+    rep.write('Variance', 1 - persistence, 'dispersion', res_row['dispersion'], color='cyan')
+
 
     # alternatively we can borrow the order parameter for liquid crystals defined as
     # average of the second Legendre polynomial
