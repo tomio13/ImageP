@@ -14,7 +14,8 @@ from numpy import (linspace, zeros, sqrt, nanmax,
 from numpy import savez_compressed, quantile
 from matplotlib import pyplot as pl
 #do not even bother plotting:
-pl.ioff()
+#pl.ioff()
+pl.ion()
 
 from glob import glob
 import os, sys
@@ -38,7 +39,9 @@ config = {'dir': './', 'outdir': './Results', 'ext':'.png', 'dpi': 150, \
         'maskth': -1,\
         'MinBlob': 3.0, 'MaxBlob': 6.0, 'dump': False,
         'UseStructure': False, 'StructureScaler': 5,
-        'CutEdge': False, 'EdgeWidth': -1}
+        'CutEdge': False, 'EdgeWidth': -1,
+        'AverageWindow': -1
+        }
 #alternative switches:
 # CutNegative cut the negative pixels in edge detection
 # for background correction, negative pixels are always cut
@@ -290,6 +293,9 @@ rep.write('Part of population used by quantile width analysis', Qwidth)
 if CutEdge:
     rep.write('Drop the edge of the image with a width of', EdgeWidth, 'pixels')
 
+if config['AverageWindow'][-1] > 0:
+    rep.write('Run local circular averaging with window radius of', config['AverageWindow'])
+
 ########################################################################################
 # end of report header, start working here...
 #
@@ -298,6 +304,13 @@ alpha_min = 0.0
 alpha_max = 180.0
 dalpha = alpha_max - alpha_min #\Delta alpha, range of angles
 alpha = linspace(alpha_min, alpha_max, Nangles, endpoint=False)
+
+# for statistics, we shall need some helper arrays
+# calculating the cosine and sine of the whole image may be faster
+# to calculate for the known angles and pick them with index
+alpha_rad = alpha*pi/180.0
+cos_alpha = cos(alpha_rad)
+sin_alpha = sin(alpha_rad)
 
 # results table
 res = []
@@ -317,7 +330,7 @@ for fn in lst[0:N]:
         rep.write('Image', fn, 'not found!', color='red')
         continue
 
-    rep.write("Read image from file:", fn, color='cyan')
+    rep.write("\n# Read image from file:", fn, color='green')
 
     res_row['file'] = ffn
 
@@ -471,14 +484,9 @@ for fn in lst[0:N]:
 
     # first we find the maximum angles, and free up 'c'!
     print("Generating index image")
-    # generate angle image:
-    aimg = zeros(b.shape)
     # take the coordinates, where the 3D c-image is equal to its maximum b
     # only for nonzero c values (the ones kept after filtering)
     indx = ((c == b) * (c > 0) ).nonzero()
-
-    # the first dimension holds the angle index value, 1,2 are the X,Y projection:
-    aimg[indx[1],indx[2]] = indx[0]*dalpha/Nangles + alpha_min
 
     # clean some memory:
     del(c)
@@ -560,6 +568,28 @@ for fn in lst[0:N]:
     print("it took: %.3f seconds" %(time()-tt))
     rep.write("Selected intensity threshold is", th, color='green')
 
+    # clean up an index image:
+    indximg = zeros(b.shape, dtype='int')
+    indximg[indx[1],indx[2]] = indx[0]
+    indximg = indximg * bindx
+    # the new index now contains only the cleaned up list of pixels
+    indx = indximg.nonzero()
+    a_indx = indximg[indx]
+
+    # generate angle image:
+    aimg = zeros(b.shape)
+    # the first dimension holds the angle index value, 1,2 are the X,Y projection:
+    # aimg[indx[1],indx[2]] = indx[0]*dalpha/Nangles + alpha_min
+    # this should be faster, because it is only addressing
+    aimg[indx] = alpha[a_indx]
+
+    # !! because indx is now cleaned up, we do not need this anymore
+    # filter the angle image to the meaningful amplitudes only:
+    # aimg = aimg*bindx
+    # because of this point, the masking is incorporated in the meaningful
+    # alpha values, thus no worries...
+
+    ####################
     # Output filtered angle and intensity images
     # pl.figure(1)
 
@@ -573,12 +603,6 @@ for fn in lst[0:N]:
     pl.savefig(fout, dpi= dpi, bbox_inches="tight", pad_inches=0)
 
 
-    # filter the angle image to the meaningful amplitudes only:
-    aimg = aimg*bindx
-    # because of this point, the masking is incorporated in the meaningful
-    # alpha values, thus no worries...
-
-    ####################
     # More output:
     #pl.figure(3);
     pl.jet()
@@ -609,19 +633,19 @@ for fn in lst[0:N]:
     pl.savefig(fout, dpi= dpi, bbox_inches="tight", pad_inches=0)
 
     dalpha2 = (alpha[1] - alpha[0])/2.0
-    #we shift the pocket boundaries down a bit to accomodate
-    #the real alpha values to the midpoints
+    # we shift the pocket boundaries down a bit to accomodate
+    # the real alpha values to the midpoints
     bins = append(alpha, alpha_max) - dalpha2
     ais = aimg[bindx]   #the rest is set to 0 and meaningless.
 
-    #store some information 1:
+    # store some information 1:
     res_row['Average angle (deg.)'] = ais.mean()
-    #here the histogram can be over broad, because of wrapping around
-    #angles... std() we derive after reorientation
+    # here the histogram can be over broad, because of wrapping around
+    # angles... std() we derive after reorientation
 
     h = hist(ais, bins = bins)
 
-    pl.figure(4)
+    # pl.figure(4)
     pl.clf()
     pl.axes(polar=True)
     pl.plot(h['midpoints']*pi/180,h['dist'],'bo-')
@@ -636,23 +660,23 @@ for fn in lst[0:N]:
     SaveData(['angle'],zip(ais), fout, \
             "Angle values obtained")
 
-    #rotate to the major peak:
+    # rotate to the major peak:
     central =  h['midpoints'][ h['dist'] == h['dist'].max()][0]
     ais = ais - central
-    #all those falling to the 3rd quarter get back to the top
+    # all those falling to the 3rd quarter get back to the top
     ais[ ais < -90] += 180.0
-    #all those in the 2nd quarter back to the bottom:
+    # all those in the 2nd quarter back to the bottom:
     ais[ ais > 90 ] -= 180.0
 
-    #recalculate the histogram:
-    #but first recalculate the bind: central is one of the
-    #actual alpha values...
+    # recalculate the histogram:
+    # but first recalculate the bind: central is one of the
+    # actual alpha values...
     alpha2 = alpha - central
     alpha2[ alpha2 > 90] -= 180
     alpha2[ alpha2 < -90] += 180
     alpha2.sort()
-    #we do not know where alpha2 now ended, but we add a bin wall
-    #above it. And again, shift that all values are in the middle
+    # we do not know where alpha2 now ended, but we add a bin wall
+    # above it. And again, shift that all values are in the middle
     bins2 = append(alpha2, alpha2.max() + 2.0*dalpha2) - dalpha2
 
     h2 = hist(ais, bins=bins2)
@@ -677,7 +701,7 @@ for fn in lst[0:N]:
 #    h['midpoints'] = h['midpoints'] - central
 #    h['pockets'] = h['pockets'] - central
 
-    pl.figure(4)
+    # pl.figure(4)
     pl.clf()
     pl.axes(polar=True)
     pl.plot(h2['midpoints']*pi/180,h2['dist'],'bo-')
@@ -707,17 +731,17 @@ for fn in lst[0:N]:
     # append the radius of gyration = standard deviation:
     # ais got recentered since...
     aistd = ais.std()
-    #distribution width:
+    # distribution width:
     res_row['Standard dev. (deg.)'] = aistd
 
-    #store the FWHM of the histogram:
+    # store the FWHM of the histogram:
     aisfwhm = FWHM(h2['midpoints'],h2['dist'])
     res_row['FWHM (deg.)'] = aisfwhm
     #we can also use quantiles to analyze width
     quants = quantile( ais, asarray((0.5- Qwidth/2, 0.5+Qwidth/2)))
     res_row['Quantile (deg.)'] = quants[1]-quants[0]
 
-    # As a last measure we can define a persistence
+    # As a last measure we can define a persistence, the circular average of the data
     # we can use the original histogram, but I am not sure how the rotation affected the result
     # the problem comes from the fact we do not have a full vector direction, but only a half circle
     # Thus such rotation would affect the result. The original setup is at least in Y symmetric.
@@ -754,6 +778,59 @@ for fn in lst[0:N]:
     res_row['Order parameter (S)'] = S
 
     rep.write("Distribution widths are std:", aistd, "\tFWHM:", aisfwhm, '\tQuant:', quants[1]-quants[0])
+
+    if config['AverageWindow'][-1] > 0:
+        rep.write('Calculating local circular averages', color='green')
+        # local measure of averages?
+        # If we have local order, a local average or local dispersion should be informative
+        # Let us use the cos_alpha and sin_alpha arrays for this
+        cos_img = zeros(b.shape)
+        cos_img[indx] = cos_alpha[a_indx]
+        sin_img = zeros(b.shape)
+        sin_img[indx] = sin_alpha[a_indx]
+        # now, we have two images containing the local cosine and sine values
+        # to calculate a local circular average, we can use a convolution filter
+        kernel = BoxcarKernel(config['AverageWindow'][-1], norm= False, OneD= True)
+        # we sum up the images, but keep only the pixels with valid values originally,
+        # remove the spill caused by the convolution (neighboring 0s become >0)
+        denominator = ConvFilter1D(bindx.astype('int'), kernel, MinPad= True, kernel_y= None)*bindx
+        # this will also cause a spill to the zero background:
+        sin_avg = ConvFilter1D(sin_img, kernel, MinPad= True, kernel_y= None)
+        cos_avg = ConvFilter1D(cos_img, kernel, MinPad= True, kernel_y= None)
+        # we divide only for those pixels which are used in the angle image
+        # the results should never go out of the [-1,1] interval
+        indx = bindx > 0
+        sin_avg[indx] = sin_avg[indx]/denominator[indx]
+        cos_avg[indx] = cos_avg[indx]/denominator[indx]
+        # truncate back to the valid pixels using bindx image:
+        R_img = sqrt(sin_avg**2 + cos_avg**2)*bindx
+        # del(cos_img, sin_img, sin_avg, cos_avg)
+
+        pl.clf();
+        # img is still the background corrected image after compression
+        pl.jet()
+        pl.imshow(R_img)
+        pl.axis('off')
+        pl.title("Circular average image %s" %fn)
+        fout = os.path.join(outdir, f"{ffn}-local-circ-avg-image{ext}")
+        pl.savefig(fout, dpi= dpi, bbox_inches="tight", pad_inches=0)
+
+        # let us make a histogram of the valid pixels only:
+        R_h = hist(R_img[indx], 50)
+        R_mean = (R_h['midpoints']*R_h['dist']).sum()/R_h['dist'].sum()
+        rep.write('Average local circular average is:', R_mean, color='cyan')
+        res_row['Average local circular average'] = R_mean
+
+        pl.clf()
+        pl.plot(R_h['midpoints'], R_h['dist'], 'bo-')
+        pl.title('Circular average histogram')
+        fout = os.path.join(outdir, f"{ffn}-circ-average-histogram.png")
+        pl.savefig(fout, dpi= dpi)
+
+        fout = os.path.join(outdir, f"{ffn}-circular-average-histogram-data.txt")
+        SaveData(R_h.keys(), zip(*R_h.values()), fout, \
+            f"Circular average histogram with a window of +/-{config['AverageWindow'][-1]} pixels")
+
 
     #dump numpy objects?
     if dump:

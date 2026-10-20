@@ -1000,3 +1000,11 @@ I have some issues with image orientation, in some cases I get the image upside 
 Now, I have added circular statistics based on the wikipedia page at:
 https://en.wikipedia.org/wiki/Directional_statistics#Dispersion
 For Persistence, we have to expect that the minimal value is 2/pi, because of the half circle analyzed. Persistence is also the angular average. Persistence is comparing the end to end distance to the contour length in an N unit step random walk.
+
+2026-10-15:
+Restructure the orientation analysis. Since it uses a low number of discrete angles, it is easier to substitute the angle image from an angle array than recalculate it every time. And I can also calculate a cosine and sine image the same way.
+Now, a convolution with an average (box-car) filter will give me the local circular average. We can then analyze this statistics as well.
+New parameter: AverageWindow the number --> the averaging kernel is +/- AverageWindow around the point.
+I have modified the index from a 3D image which had all points of a 2D image to be filtered down to the nonzero values of the filtered bindx image. This should also improve some speed (anyway, the major speed issue is the 2D convolution repeated 20 times or so...).
+Simple averaging does not work, because background pixels contribute with 0 values. This shifts the result towards 0 strongly. Normally an average of all angles 0 - pi is 2/pi.
+Now, using only non-zero pixels in the local average we should get values between 2/pi and 1.
