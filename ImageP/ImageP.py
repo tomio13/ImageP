@@ -1137,8 +1137,14 @@ def bwanalyze(bwimg, key=1, feature="", WithMin= False):
         thetaeig = linalg.eig(theta)
         thetaeigval = asarray(thetaeig[0])
         thetaeigvec = asarray(thetaeig[1])
+        # I have encountered values of 0j in my results...
+        if ((thetaeigval.imag == 0).all()):
+            thetaeigval = thetaeigval.real
+        if ((thetaeigvec.imag == 0).all()):
+            thetaeigvec = thetaeigvec.real
 
         results['Eigenvalues'] = thetaeigval
+
         # for some reason these vectors get swapped...
         results['Eigenvector1'] = thetaeigvec[:,0][::-1]
         results['Eigenvector2']= thetaeigvec[:,1][::-1]

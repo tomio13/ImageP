@@ -1008,3 +1008,9 @@ New parameter: AverageWindow the number --> the averaging kernel is +/- AverageW
 I have modified the index from a 3D image which had all points of a 2D image to be filtered down to the nonzero values of the filtered bindx image. This should also improve some speed (anyway, the major speed issue is the 2D convolution repeated 20 times or so...).
 Simple averaging does not work, because background pixels contribute with 0 values. This shifts the result towards 0 strongly. Normally an average of all angles 0 - pi is 2/pi.
 Now, using only non-zero pixels in the local average we should get values between 2/pi and 1.
+
+2026-11-18:
+The orientation analysis in bwanalyze has started returning complex numbers with 0 imaginary part.
+Current numpy version is: 2.5.4
+This should not happen according to the documentation of numpy.linalg.eig, but for any case I add
+a check into the function.
