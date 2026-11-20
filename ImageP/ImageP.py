@@ -1463,11 +1463,11 @@ def ExtractProfile(img, i0,j0, ei0,ej0, N=0, verbose=False):
 
     Parameters:
     img:        image to use
-    x0, y0:        start coodinates (indices)
-    ex0,ey0:    unit direction vector
-    N:        number of pixels + and - direction
-            N=0 goes to the edges of the image
-            If N points out of the image, the routine truncates at the edge.
+    i0, j0:     start coodinates (indices)
+    ei0,ej0:    unit direction vector
+    N:          number of pixels + and - direction
+                N=0 goes to the edges of the image
+                If N points out of the image, the routine truncates at the edge.
 
     verbose:    (False/True) increase verbosity
 
@@ -1480,64 +1480,75 @@ def ExtractProfile(img, i0,j0, ei0,ej0, N=0, verbose=False):
         return []
 
     ImgEnd = asarray(img.shape)
-    if i0 < 0 or j0 < 0 or \
-        i0 > ImgEnd[0] or j0 > ImgEnd[1]:
+    if (i0 < 0 or j0 < 0 or
+        i0 > ImgEnd[0] or j0 > ImgEnd[1]):
 
         print("Coordinates out of bound")
         return None
-    #end if
+    # end if
 
-    #What is the direction vector like?
+    # What is the direction vector like?
     le = float(ei0*ei0 + ej0*ej0)
 
     if le == 0 :
         print("Error: zero direction vector!")
         return None
 
-    #Make sure it has unit length:
+    # Make sure it has unit length:
     e = asarray((ei0,ej0))
 
     e = e/le if le != 1.0 else e
     ei0, ej0 = e
 
-    #At some point vector math looks simpler:
+    # At some point vector math looks simpler:
     center = asarray((i0,j0))
 
-    #vecStart shall be the starting point of the profile
-    #i0 and j0 are the middle of it
-    #now we have to find it:
+    # vecStart shall be the starting point of the profile
+    # i0 and j0 are the middle of it
+    # now we have to find it:
 
-    #Backward:
-    #how many steps I have from i=0 to reach i0
+    # we do not allow walking off the image:
+    # how many steps I have from i=0 to reach i0
     # and from j=0 to reach j0
-    ni = abs(i0/ei0) if ei0 != 0 else img.size
-    nj = abs(j0/ej0) if ej0 != 0 else img.size
 
-    #we do not allow walking off the image:
-    l1 = min(N,ni,nj) if N != 0 else min(ni,nj)
+    ni0 = abs(i0/ei0) if ei0 != 0 else i0
+    nj0 = abs(j0/ej0) if ej0 != 0 else j0
+    ni1 = abs((ImgEnd[0]-1-i0)/ei0) if ei0 != 0 else ImgEnd[0]-1-i0
+    nj1 = abs((ImgEnd[1]-1-j0)/ej0) if ej0 != 0 else ImgEnd[1]-1-j0
+    # l1 is a radius from x0,y0 to the closest edge
+    l1 = int(min(ni0, nj0, ni1, nj1))
+    print("starting half length:", l1, "points")
+
+    if N != 0:
+        l1 = min(int(N/2), l1)
+
     StartVec = center - l1*e
 
-    #now the end vector:
-    ni = abs((ImgEnd[0]-1-i0)/ei0) if ei0 != 0 else 0.0
-    nj = abs((ImgEnd[1]-1-j0)/ej0) if ej0 != 0 else 0.0
+    if (StartVec[0] < 0 or StartVec[0] > ImgEnd[0] or
+        StartVec[1] < 0 or StartVec[1] > ImgEnd[1]):
+        print('Start vector out of bounds!')
 
-    l2 = min(N,ni,nj) if N!= 0 else min(ni,nj)
-    #we could find the end point, but we do not need it
-    #EndVec = center + l2*e
+    # now the end vector:
 
-    #The profile contains Nl points:
-    Nl = l1+l2
-    l = arange( Nl )
+    # we could find the end point, but we do not need it
+    # EndVec = center + l2*e
+
+    # The profile contains Nl points:
+    Nl = 2*l1 + 1
+    l = arange(Nl)
 
     if verbose:
         print("Start point", StartVec)
         print("direction:", e)
         print("Number of points:", Nl)
-    #vec contains the float(i,j) point pars which we
-    #need to evaluate:
+
+    # vec contains the float(i,j) point pairs which we
+    # need to evaluate:
     vec = asarray( [i*e + StartVec for i in l])
-    print(vec.shape)
-    val = zeros( l.shape)
+
+    print('resulted vector has a shape:', vec.shape)
+
+    val = zeros(l.shape)
     k = 0
 
     for i,j in vec:
@@ -1553,12 +1564,12 @@ def ExtractProfile(img, i0,j0, ei0,ej0, N=0, verbose=False):
         #the current point, it matters more...
 
         val[k] = (1.0-aw)*(1.0-bw)*img[ii0,ij0] +\
-                aw*(1-bw)*img[ii1,ij0] +\
+                aw*(1.0-bw)*img[ii1,ij0] +\
                 (1.0-aw)*bw*img[ii0,ij1] +\
                 aw*bw*img[ii1,ij1]
 
         k += 1
-    #end for
+    # end for
 
     return [l, vec[:,0],vec[:,1],val]
 #End of  ExtractProfile
