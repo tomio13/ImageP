@@ -140,8 +140,8 @@ for fn in  lst:
     imgb = bwlabel(imgc, MinSize= MinSize, gap= gap)
     if Nfill > 0:
         tmpimg = imgb > 0
-        for i in range(Nfill): tmpimg = SimpleDilate(tmpimg)
-        for i in range(Nfill):  tmpimg = SimpleErode(tmpimg)
+        tmpimg = SimpleDilate(tmpimg, Nfill)
+        tmpimg = SimpleErode(tmpimg, Nfill)
         imgb = bwlabel(tmpimg, MinSize= MinSize, gap= gap)
     #end using Nfill
     # convert the patch numbers to a stack wide individual counter
@@ -567,7 +567,7 @@ def CountNeighbours(a, cut= 2):
 
 ###############################################################################
 ########## work starts here
-# take our beautiful labeles stack, and turn it to a distance map
+# take our beautiful labeled stack, and turn it to a distance map
 b1 = DistanceFilter3D(a)
 
 outpath = os.path.join(outdir, 'distance')

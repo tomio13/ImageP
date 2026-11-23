@@ -6,7 +6,55 @@
     Date:       2016-06- 2026
     Licence:    CC(4)-BY
 
+    Method:
+    After background correcting a 2D image, convolve it with a set ofhighly
+    elliptic Mexican-hat filters oriented at selected directions.
+    Pick up the orientations of best match (maximum intensity) at every pixels.
+    Then record this intensity (maximum intensity image) and the corresponding
+    angle (alpha image) for every pixel.
+    Results are provided as several images and result tables, containing the
+    detected orientation angles, a histogram of orientations and statistical
+    summary for each images analyzed.
+
+    Statistics:
+    The easiest statistical analysis is to see how the number of pixels
+    oriented at various preselected directions form an angular distribution.
+    The width of this distribution can be determined using:
+    - its standard deviation
+    - a quantile (e.g. median) width
+    - or as a full width at half maximum.
+
+    To complement this, we can look at cyclic (or circular) statistical
+    measures, such as:
+    - circular average (also called as persistance)
+    - the second circular momentum R2
+    - circular variance (1 - circular average)
+    - the underlying standard deviation (sqrt(- 2 * circular average ^ 2))
+    - dispersion
+    - the order parameter(S)  commonly defined for liquid crystals as:
+      average(0.5 (3 cos(theta)^2 -1))
+
+    Value ranges: we have angles in a half circle only, because a direction and
+    its opposite, that is alpha and 180 + alpha provide the same result.
+    Thus this makes the circular average fall between [2/pi, 1] instead of [0, 1].
+    And the S is also aobut 0.5 - 0.6 for a nematic phase, 1 for perfect order and
+    disappear (S= 0) for isotropic systems.
+
+    For further information, see also:
+    https://en.wikipedia.org/wiki/Directional_statistics#Dispersion
+
+    A local version of the circular average is also calculated. This considers only
+    a small window with a radius of 'AverageWindow' around a pixel and
+    calculates the circular average within.
+    The resulted points are then used to form a histogram for the whole
+    image (valid oriented pixels only).
+    (This calculation utilizes a set of convolution filters to calculate the number
+    of neighbors and the averages.)
+    The results are in the circular-average-histogram image and data files,
+    and the mean value is recorded for the image as 'Average local circular average'.
 """
+
+
 from ImageP import *
 from numpy import (linspace, zeros, sqrt, nanmax,
                    append, pi, arange, asarray, abs, cos, sin,
@@ -737,7 +785,7 @@ for fn in lst[0:N]:
     # store the FWHM of the histogram:
     aisfwhm = FWHM(h2['midpoints'],h2['dist'])
     res_row['FWHM (deg.)'] = aisfwhm
-    #we can also use quantiles to analyze width
+    # we can also use quantiles to analyze width
     quants = quantile( ais, asarray((0.5- Qwidth/2, 0.5+Qwidth/2)))
     res_row['Quantile (deg.)'] = quants[1]-quants[0]
 

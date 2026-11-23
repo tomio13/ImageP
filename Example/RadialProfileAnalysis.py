@@ -8,7 +8,7 @@
     enumerated and a radial distribution is created
     it is also normalized to the circumference of that radius
 
-    Newest /ersion contains three different estimations of distances:
+    Newest version contains three different estimations of distances:
     - based on a center of mass and polar coordinates
     - based on angular segments and the distance from the mask within using
         again polar coordinates

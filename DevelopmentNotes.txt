@@ -1016,4 +1016,5 @@ This should not happen according to the documentation of numpy.linalg.eig, but f
 a check into the function.
 
 2026-11-20:
-The ExtractProfile function goes a bit weird if the vector is negative. I resturcture the function such that it takes the minimum to the closest boundary then uses this as a radius around the center point. Thus, it will always have odd number of points.
+The ExtractProfile function goes a bit weird if the vector is negative. I resturcture the function such that it takes the minimum to the closest boundary then uses this as a radius around the center point. Thus, it will always have odd number of points and it may not go through the whole image, but
+the selected structure only (hopefully). However, it is independent of the actual orientation this way.
