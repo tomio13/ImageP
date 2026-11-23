@@ -1,5 +1,5 @@
-This collection of algorithm is an implementation of particle tracking related
-image processing. The work is based on the publications of prof. Grier, and
+This collection of algorithm started as an implementation of particle tracking
+related image processing. The work is based on the publications of prof. Grier, and
 various internet resources of the code available for IDL and Matlab.
 
 The whole thing was originally based on scipy and numpy, and also using pylab
@@ -7,6 +7,14 @@ as a plotting resource.
 
 Some of these functions may be obsolete a bit, but others I find rather
 useful. Each function has its documentation in the code, please have a look.
+
+Now, the project includes several other image processing tools for structure
+detection, analysis, image erosion, dilation, masking, convolution filters, etc.
+
+The Examples folder containts various semi-automated scripts to use this library
+for scientific image processing. Most of the scripts accept a configuration text
+file defining process parameters. They also have default parameters defined, look
+into the scripts for further information.
 
 Lincense: as of 2024 May I put it under CC(4)-BY license, see:
 https://creativecommons.org/licenses/by/4.0/
