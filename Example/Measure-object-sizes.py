@@ -2,10 +2,35 @@
 """ Measure the length of fiber like structures in images.
     The idea is to take an external perspective and try identifying a skeleton
     that defines the structure.
+
     Author: tomio
     Licence: CC(4)-BY
     Date: 2022 - 2026-
     Warranty: None
+
+    Problem:
+    there are objects such a fibers or microgel rods imaged using e.g.
+    optical microscopy. The question is to detect their length or just a
+    size parameter to see what we have in the sample.
+
+    This script can apply background correction and intensity compression to
+    detect the contours of such an object, then using the bright field mode,
+    we can get the so cut area as an object.
+    Characteristic sizes we can get in three ways:
+    - binary erosion based skeleton
+    - distance transform based skeleton
+    - detect the object diameter based on the distance filter and the corresponding
+      skeleton
+    - using a second momentum (inertia tensor) method detect the elongation direction
+      and calculate the corresponding profile, which gives a characteristic length.
+
+    What we do not yet include is making an equivalent size using area/perimeter
+    as a measure.
+
+    Configuration is expected in a YAML format, several parameters have a default
+    value as well.
+
+    Results are exported into a comparison table and various images.
 """
 
 from ImageP import *
